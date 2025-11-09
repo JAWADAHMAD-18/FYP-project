@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { registerUser,loginUser } from "../controllers/users.controllers.js";
+import { registerUser, loginUser, refreshAccessToken } from "../controllers/users.controllers.js";
 import { upload } from "../middleware/cloudinary.middleware.js";
 
 const router = Router();
 
 // Routes for users
-router.post("/register", upload.single("profilePic"), registerUser);
+router.route("/register").post (upload.single("profilePic"), registerUser);
 router.route("/login").post(loginUser)
+router.route("/refresh-token").post( refreshAccessToken);
 
 export default router;
