@@ -56,13 +56,13 @@ UserSchema.methods.generateAccessToken = async function () {
       email: this.email,
       isAdmin: this.isAdmin,
     },
-    process.env.JWT_SECRET,
+    process.env.ACCESS_TOKEN_SECRET,
     {
       expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
     }
   );
 };
-UserSchema.methods.generateRefresh_token = function () {
+UserSchema.methods.generateRefreshToken = function () {
   return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
   });
