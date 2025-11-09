@@ -21,7 +21,7 @@ const UserSchema = new Schema(
       required: true,
       default: false,
     },
-    pic: {
+    profilePic: {
       type: String,
       required: true,
       default:
@@ -62,7 +62,7 @@ UserSchema.methods.generateAccessToken = async function () {
     }
   );
 };
-userSchema.methods.generateRefresh_token = function () {
+UserSchema.methods.generateRefresh_token = function () {
   return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
   });
