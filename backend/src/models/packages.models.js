@@ -15,12 +15,15 @@ const packageSchema = new Schema(
       required: true,
     },
     duration: {
-      type: Number,
+      type: String,
       required: true,
     },
     image: {
       type: String,
       required: true,
+    },
+    imagePublicId: {
+      type: String,
     },
     location: {
       type: String,
@@ -48,7 +51,7 @@ const packageSchema = new Schema(
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      // required: true,
     },
   },
   {

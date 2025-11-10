@@ -13,8 +13,14 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static("public"));
 
-//Routes
-import  userRoutes from "./routes/users.routes.js";
+// Routes imports
+import userRoutes from "./routes/users.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import packageRoutes from "./routes/packages.routes.js";
+
+// Route mounting
 app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1", packageRoutes); // Public package routes
 
 export default app;

@@ -78,7 +78,8 @@ export const loginUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: process.env.REFRESH_TOKEN_EXPIRY,
+    // Convert days to milliseconds (7d = 7 * 24 * 60 * 60 * 1000)
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   };
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
