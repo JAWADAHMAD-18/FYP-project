@@ -17,10 +17,12 @@ app.use(express.static("public"));
 import userRoutes from "./routes/users.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import packageRoutes from "./routes/packages.routes.js";
+import customPackageRoutes from "./routes/customPackage.routes.js";
 
 // Route mounting
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1", packageRoutes); // Public package routes
+app.use("/api/v1", customPackageRoutes); // Custom package routes
 
 export default app;
