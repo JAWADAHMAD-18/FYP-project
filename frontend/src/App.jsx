@@ -1,5 +1,6 @@
 
 import './App.css'
+import ChatWidget from './components/ChatWidget'
 
 function App() {
 
@@ -9,6 +10,8 @@ function App() {
     text "hello" inside it. The `className='font-bold'` attribute is setting the CSS class of the
     heading element to apply a bold font style to the text "hello".  */}
     <h1 className='font-bold flex justify-center items-center  '>hello</h1>
+
+    <ChatWidget />
 
     </>
   )
