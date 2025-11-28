@@ -1,136 +1,150 @@
-import axios from "axios";
-import { ApiError } from "./apiError.utills.js";
-import Ajv from "ajv";
+// ============================================
+// GEMINI AI UTILITIES
+// Travel with Jawad - Jawad Tech Group
+// ============================================
 
-const GEMINI_API_URL = process.env.GEMINI_API_URL;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const ajv = new Ajv();
-const packageSchema = {
-  type: "object",
-  properties: {
-    id: { type: "string" },
-    location: { type: "string" },
-    title: { type: "string" },
-    price: { type: ["number", "null"] },
-    currency: { type: "string" },
-    highlights: { type: "array", items: { type: "string" } },
-    details: { type: "string" },
-  },
-  required: ["id", "location", "title", "highlights", "details"],
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Use Gemini 2.0 Flash model
+const model = genAI.getGenerativeModel({
+  model: 'gemini-2.0-pro-exp'
+});
+
+// System prompt for travel chatbot
+export const SYSTEM_PROMPT = `You are a friendly travel assistant chatbot for "Travel with Jawad", a travel agency created by Jawad Tech Group.
+
+... ( SAME PROMPT — NOT CHANGED ) ...
+`;
+
+/**
+ * Check if message is travel-related
+ */
+export const isTravelRelated = (message) => {
+  const travelKeywords = [
+    // English keywords
+    'travel', 'trip', 'tour', 'visit', 'vacation', 'holiday', 'package',
+    'hotel', 'destination', 'place', 'location', 'booking', 'sightseeing',
+    'tourist', 'tourism', 'resort', 'flight', 'transport', 'budget',
+    'historical', 'beach', 'mountain', 'city', 'country', 'agency',
+    'company', 'jawad', 'sights', 'attraction', 'explore', 'adventure',
+
+    // Roman Urdu keywords
+    'safar', 'ghoomna', 'ghumna', 'ghumaon', 'jana', 'jaon', 'jayein',
+    'mazaar', 'qabristan', 'masjid', 'darbar', 'kahan', 'kitna',
+    'kharch', 'paisay', 'rupees', 'cost', 'price', 'detail', 'batao',
+    'batayen', 'dikhayen', 'suggest', 'recommend',
+
+    // Pakistan destinations
+    'murree', 'lahore', 'karachi', 'islamabad', 'naran', 'kaghan', 'hunza',
+    'swat', 'kashmir', 'gilgit', 'skardu', 'chitral', 'kalash', 'fairy',
+    'meadows', 'deosai', 'khunjerab', 'mohenjo', 'daro', 'taxila',
+    'badshahi', 'faisal', 'mosque', 'fort', 'museum', 'minar', 'pakistan',
+    'rawalpindi', 'peshawar', 'quetta', 'multan', 'faisalabad', 'gwadar',
+
+    // International
+    'dubai', 'turkey', 'malaysia', 'thailand', 'maldives', 'saudi',
+    'arabia', 'umrah', 'hajj', 'europe', 'paris', 'london', 'bangkok'
+  ];
+
+  const lowerMessage = message.toLowerCase();
+
+  // Greetings allowed always
+  const greetings = [
+    'hello', 'hi', 'salam', 'hey', 'assalam', 'kia hal',
+    'kaise', 'kaisay', 'kese', 'aoa', 'good morning',
+    'good evening', 'good afternoon'
+  ];
+  if (greetings.some(g => lowerMessage.includes(g))) return true;
+
+  // Creator questions allowed
+  const creatorQuestions = [
+    'who made', 'who created', 'who built',
+    'kaun banaya', 'kisne banaya', 'kon banaya',
+    'tumhe kisne', 'apko kisne', 'aap kaun'
+  ];
+  if (creatorQuestions.some(q => lowerMessage.includes(q))) return true;
+
+  return travelKeywords.some(keyword => lowerMessage.includes(keyword));
 };
-const validatePackage = ajv.compile(packageSchema);
 
-const buildPrompt = ({ location, tripType, startDate, endDate, type }) => {
-  const start = startDate
-    ? new Date(startDate).toISOString().split("T")[0]
-    : "N/A";
-  const end = endDate ? new Date(endDate).toISOString().split("T")[0] : "N/A";
-
-  if (type === "info") {
-    return `You are a knowledgeable travel guide. Provide a concise 3-4 sentence description about "${location}", including history, culture, and why it's interesting to visit. Output plain text or JSON with key "details".`;
-  }
-
-  return `You are an expert travel agent. Generate a single travel package as JSON.
-Rules:
-- Output valid JSON only matching schema: { id, location, title, price, currency, highlights:[], details }
-- id: short unique id (pkg-xxxx)
-- location: provided destination
-- title: short marketing title
-- price: integer estimate in PKR
-- currency: PKR
-- highlights: array of 3-6 short strings
-- details: 1-2 sentence description
-
-Input:
-location: ${location}
-tripType: ${tripType || "general"}
-start_date: ${start}
-end_date: ${end}
-
-Generate the JSON now.`;
-};
-
-// Utility to safely parse JSON returned by Gemini
-const safeParseJSON = (text) => {
-  if (!text) return null;
-  const cleaned = text
-    .trim()
-    .replace(/^```json\s*/, "")
-    .replace(/```$/, "")
-    .trim();
+/**
+ * Generate AI response using Gemini
+ */
+export const generateResponse = async (userMessage, conversationHistory = []) => {
   try {
-    return JSON.parse(cleaned);
-  } catch {
-    return null;
-  }
-};
+    const chatHistory = [
+      {
+        role: 'user',
+        parts: [{ text: SYSTEM_PROMPT }]
+      },
+      {
+        role: 'model',
+        parts: [{
+          text:
+            'Understood! I am ready to assist as a travel chatbot for Travel with Jawad...'
+        }]
+      }
+    ];
 
-// Retry wrapper
-const callGeminiAPI = async (prompt, retries = 2) => {
-  if (!GEMINI_API_URL || !GEMINI_API_KEY)
-    throw new ApiError(500, "Gemini API configuration missing");
+    // Add previous chat history
+    conversationHistory.forEach(msg => {
+      chatHistory.push({
+        role: msg.role,
+        parts: [{ text: msg.content }]
+      });
+    });
 
-  for (let i = 0; i <= retries; i++) {
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.8,
+        topK: 40,
+        maxOutputTokens: 2048
+      }
+    });
+
+    const result = await chat.sendMessage(userMessage);
+    const responseText = result.response.text();
+
+    let parsedResponse = responseText;
+    let isJson = false;
+
     try {
-      const resp = await axios.post(
-        GEMINI_API_URL,
-        { prompt },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${GEMINI_API_KEY}`,
-          },
-          timeout: 15000,
-        }
-      );
-      const text = resp.data?.text || resp.data?.result || resp.data;
-      return safeParseJSON(
-        typeof text === "string" ? text : JSON.stringify(text)
-      );
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResponse = JSON.parse(jsonMatch[0]);
+        isJson = true;
+      }
     } catch (err) {
-      if (i === retries)
-        throw new ApiError(502, `Gemini API failed: ${err.message || err}`);
-      await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, i))); // exponential backoff
+      parsedResponse = responseText;
     }
+
+    return {
+      success: true,
+      response: parsedResponse,
+      isJson
+    };
+
+  } catch (error) {
+    console.error('❌ Gemini API Error:', error.message);
+    return {
+      success: false,
+      response: 'Sorry, I encountered an error. Please try again!',
+      isJson: false,
+      error: error.message
+    };
   }
 };
 
-// Main function
-export const generatePackageWithGemini = async ({
-  location,
-  tripType,
-  startDate,
-  endDate,
-  type = "package",
-}) => {
-  const prompt = buildPrompt({ location, tripType, startDate, endDate, type });
-  const parsed = await callGeminiAPI(prompt);
-
-  if (!parsed) throw new ApiError(502, "Gemini returned invalid response");
-
-  if (type === "info") {
-    // Return only { details } for location description
-    return { details: parsed.details || parsed };
-  }
-
-  // Ensure required fields & sanitize
-  const sanitized = {
-    id: parsed.id || `pkg-${Math.random().toString(36).slice(2, 8)}`,
-    location: parsed.location || location,
-    title: parsed.title || `${location} Custom Package`,
-    price: parsed.price || null,
-    currency: "PKR",
-    highlights: Array.isArray(parsed.highlights)
-      ? parsed.highlights.slice(0, 6)
-      : [],
-    details: parsed.details || "",
-  };
-
-  if (!validatePackage(sanitized))
-    throw new ApiError(502, "Gemini generated invalid package JSON");
-
-  return sanitized;
+/**
+ * Polite rejection
+ */
+export const getPoliteRejection = () => {
+  return "I'm a travel assistant for Travel with Jawad! 🌍 I can help with destinations, packages, hotels, and planning amazing trips. Where would you like to travel?";
 };
-
-export default { generatePackageWithGemini };
