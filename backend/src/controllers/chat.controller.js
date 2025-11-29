@@ -1,5 +1,5 @@
 // ============================================
-// CHAT CONTROLLER (ES MODULE VERSION)
+// CHAT CONTROLLER
 // Travel with Jawad - Jawad Tech Group
 // ============================================
 
@@ -22,10 +22,11 @@ import {
  * Main chat endpoint handler
  * POST /api/chat
  */
-export const handleChat = async (req, res) => {
+const handleChat = async (req, res) => {
   try {
     const { message, sessionId } = req.body;
 
+    // Validation
     if (!message || message.trim() === '') {
       return res.status(400).json({
         success: false,
@@ -40,8 +41,9 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Check if travel-related
+    // Check if message is travel-related
     if (!isTravelRelated(message)) {
+      // Save the rejected query to session
       await addMessageToSession(sessionId, 'user', message);
       await addMessageToSession(sessionId, 'model', getPoliteRejection());
 
@@ -50,15 +52,15 @@ export const handleChat = async (req, res) => {
         response: getPoliteRejection(),
         isRejected: true,
         isJson: false,
-        sessionId,
+        sessionId: sessionId,
         timestamp: new Date().toISOString()
       });
     }
 
-    // Get previous history
+    // Get conversation history
     const conversationHistory = await getUserSession(sessionId);
 
-    // Generate Gemini response
+    // Generate AI response
     const aiResult = await generateResponse(message, conversationHistory);
 
     if (!aiResult.success) {
@@ -69,22 +71,21 @@ export const handleChat = async (req, res) => {
       });
     }
 
-    // Save conversation
+    // Update conversation history
     await addMessageToSession(sessionId, 'user', message);
-    await addMessageToSession(
-      sessionId,
-      'model',
+    await addMessageToSession(sessionId, 'model',
       typeof aiResult.response === 'string'
         ? aiResult.response
         : JSON.stringify(aiResult.response)
     );
 
+    // Send response
     res.json({
       success: true,
       response: aiResult.response,
       isJson: aiResult.isJson,
       isRejected: false,
-      sessionId,
+      sessionId: sessionId,
       timestamp: new Date().toISOString()
     });
 
@@ -103,7 +104,7 @@ export const handleChat = async (req, res) => {
  * Get session history
  * GET /api/session/:sessionId
  */
-export const getSessionHistory = async (req, res) => {
+const getSessionHistory = async (req, res) => {
   try {
     const { sessionId } = req.params;
 
@@ -114,23 +115,25 @@ export const getSessionHistory = async (req, res) => {
       });
     }
 
+    // Check if session exists
     const exists = await sessionExists(sessionId);
     if (!exists) {
       return res.status(404).json({
         success: false,
         error: 'Session not found or expired',
-        sessionId
+        sessionId: sessionId
       });
     }
 
+    // Get session history
     const history = await getUserSession(sessionId);
     const ttl = await getSessionTTL(sessionId);
 
     res.json({
       success: true,
-      sessionId,
+      sessionId: sessionId,
       messageCount: history.length,
-      history,
+      history: history,
       expiresIn: ttl > 0 ? `${Math.floor(ttl / 60)} minutes` : 'N/A',
       timestamp: new Date().toISOString()
     });
@@ -149,7 +152,7 @@ export const getSessionHistory = async (req, res) => {
  * Clear/delete session
  * DELETE /api/session/:sessionId
  */
-export const deleteSession = async (req, res) => {
+const deleteSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
 
@@ -160,6 +163,7 @@ export const deleteSession = async (req, res) => {
       });
     }
 
+    // Clear session
     const deleted = await clearUserSession(sessionId);
 
     if (!deleted) {
@@ -172,7 +176,7 @@ export const deleteSession = async (req, res) => {
     res.json({
       success: true,
       message: 'Session cleared successfully',
-      sessionId,
+      sessionId: sessionId,
       timestamp: new Date().toISOString()
     });
 
@@ -190,7 +194,7 @@ export const deleteSession = async (req, res) => {
  * Health check endpoint
  * GET /health
  */
-export const healthCheck = (req, res) => {
+const healthCheck = (req, res) => {
   res.json({
     success: true,
     status: 'OK',
@@ -199,4 +203,11 @@ export const healthCheck = (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
+};
+
+export {
+  handleChat,
+  getSessionHistory,
+  deleteSession,
+  healthCheck
 };

@@ -1,16 +1,18 @@
 // ============================================
-// REDIS CONFIGURATION (ES MODULE VERSION)
+// REDIS CONFIGURATION
 // Travel with Jawad - Jawad Tech Group
 // ============================================
 
-import redis from 'redis';
 import dotenv from 'dotenv';
-
 dotenv.config();
+
+import redis from 'redis';
 
 // Create Redis client
 const redisClient = redis.createClient({
-    url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379,
+    // password: process.env.REDIS_PASSWORD, // Uncomment if using password
     socket: {
         reconnectStrategy: (retries) => {
             if (retries > 10) {
@@ -37,18 +39,18 @@ redisClient.on('ready', () => {
     console.log('✅ Redis: Connected and ready');
 });
 
-// Reconnecting
+// Reconnection
 redisClient.on('reconnecting', () => {
     console.log('🔄 Redis: Reconnecting...');
 });
 
 // Connection ended
 redisClient.on('end', () => {
-    console.log('⚠️ Redis: Connection closed');
+    console.log('⚠️  Redis: Connection closed');
 });
 
 // Connect to Redis
-export const connectRedis = async () => {
+const connectRedis = async () => {
     try {
         if (!redisClient.isOpen) {
             await redisClient.connect();
@@ -60,7 +62,7 @@ export const connectRedis = async () => {
 };
 
 // Graceful shutdown
-export const disconnectRedis = async () => {
+const disconnectRedis = async () => {
     try {
         if (redisClient.isOpen) {
             await redisClient.quit();
@@ -71,4 +73,8 @@ export const disconnectRedis = async () => {
     }
 };
 
-export { redisClient };
+export {
+    redisClient,
+    connectRedis,
+    disconnectRedis
+};
