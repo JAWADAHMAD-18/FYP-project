@@ -1,7 +1,4 @@
-// ============================================
-// GEMINI AI UTILITIES
-// Travel with Jawad - Jawad Tech Group
-// ============================================
+
 
 import dotenv from 'dotenv';
 dotenv.config();

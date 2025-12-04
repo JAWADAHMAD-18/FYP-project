@@ -1,7 +1,4 @@
-// ============================================
-// CHAT CONTROLLER
-// Travel with Jawad - Jawad Tech Group
-// ============================================
+
 
 import {
   getUserSession,
