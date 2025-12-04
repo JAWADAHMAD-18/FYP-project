@@ -1,12 +1,17 @@
 import { Router } from "express";
-import { registerUser, loginUser, refreshAccessToken } from "../controllers/users.controllers.js";
+import { registerUser, loginUser, refreshAccessToken, logoutUser, getCurrentUser } from "../controllers/users.controllers.js";
 import { upload } from "../middleware/cloudinary.middleware.js";
+import verifyAuth from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// Routes for users
+// Public routes (no auth required)
 router.route("/register").post (upload.single("profilePic"), registerUser);
 router.route("/login").post(loginUser)
-router.route("/refresh-token").post( refreshAccessToken);
+router.route("/refresh-token").post(refreshAccessToken);
+
+// Protected routes (auth required - req.user populated by verifyAuth)
+router.route("/logout").post(verifyAuth, logoutUser);
+router.route("/me").get(verifyAuth, getCurrentUser);
 
 export default router;

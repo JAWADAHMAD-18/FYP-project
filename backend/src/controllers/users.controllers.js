@@ -91,6 +91,12 @@ export const loginUser = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * Refresh Access Token
+ * 
+ * @route POST /api/v1/users/refresh-token
+ * @returns {Object} { accessToken } - New access token for client to use in Authorization header
+ */
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   // Try cookie first, then body
   const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
@@ -109,10 +115,28 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   }
   // Generate a new access token (do not rotate refresh token here, but you can)
   const accessToken = await user.generateAccessToken();
+  
+  // Secure cookie options: httpOnly prevents XSS, secure requires HTTPS in production, sameSite prevents CSRF
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+  res.cookie("refreshToken", refreshToken, cookieOptions);
+  
   return res
     .status(200)
     .json(new ApiResponse(200, "Access token refreshed successfully", { accessToken }));
 });
+/**
+ * Logout User
+ 
+ * 
+ * @route POST /api/v1/users/logout
+ * @middleware verifyAuth - Requires logged-in user
+ * @returns {Object} Success message
+ */
 export const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -127,11 +151,39 @@ export const logoutUser = asyncHandler(async (req, res) => {
   );
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
   };
   return res
     .status(200)
     .clearCookie("refreshToken", options)
     .clearCookie("accessToken", options)
     .json(new ApiResponse(200, "User logged out successfully"));
+});
+
+/**
+ 
+ * 
+ * @route GET /api/v1/users/me
+ * @middleware verifyAuth - Requires logged-in user
+ * @returns {Object} { user: { _id, name, email, phone, profilePic, role, createdAt } }
+ */
+export const getCurrentUser = asyncHandler(async (req, res) => {
+  // req.user is populated by verifyAuth middleware
+  if (!req.user) {
+    throw new ApiError(401, "User not authenticated");
+  }
+  
+  // Fetch fresh user data from DB to ensure latest info
+  const user = await User.findById(req.user._id)
+    .select("-password -refreshToken") // Exclude sensitive fields
+    .lean();
+  
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User data retrieved successfully", { user }));
 });
