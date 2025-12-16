@@ -5,6 +5,7 @@ import { withCache, cacheKey, TTL } from "./cache.utills.js";
 const OPENTRIPMAP_API_KEY = process.env.OPENTRIPMAP_API_KEY;
 const BASE = "https://api.opentripmap.com/0.1";
 
+// Validate and sanitize location
 const validateLocation = (location) => {
   location = (location || "").trim();
   if (location.length < 2)
@@ -12,29 +13,42 @@ const validateLocation = (location) => {
   return location;
 };
 
+// Axios with retry
 const axiosWithRetry = async (url, options, retries = 2) => {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      return await axios.get(url, { ...options, timeout: 5000 });
+      return await axios.get(url, { ...options, timeout: 10000 }); // 10s timeout
     } catch (err) {
-      if (attempt === retries) throw err; // final failure
+      if (attempt === retries) throw err;
     }
   }
 };
 
+// Fetch geoname with automatic country fallback
 const getLocationDetails = withCache(
   async (location) => {
-    const safeLocation = encodeURIComponent(location);
+    let safeLocation = encodeURIComponent(location);
+
+    // Append country code if missing (simple check for Lahore example)
+    if (!safeLocation.includes(",")) {
+      safeLocation += "%2CPK"; // default to Pakistan
+    }
+
     const { data } = await axiosWithRetry(`${BASE}/en/places/geoname`, {
       params: { name: safeLocation, apikey: OPENTRIPMAP_API_KEY },
     });
-    if (!data) throw new ApiError(404, `Location not found: ${location}`);
+
+    if (!data || !data.lat || !data.lon) {
+      throw new ApiError(404, `Location not found: ${location}`);
+    }
+
     return data;
   },
   (location) => `location:${location}`,
   TTL.HOTELS
 );
 
+// Fetch hotel details by xid
 const getHotelDetails = withCache(
   async (id) => {
     try {
@@ -51,6 +65,7 @@ const getHotelDetails = withCache(
   TTL.HOTELS
 );
 
+// Main function: get hotels for a location
 export const getHotelsForLocation = withCache(
   async (location) => {
     location = validateLocation(location);
@@ -58,7 +73,7 @@ export const getHotelsForLocation = withCache(
     // Get coordinates
     const { lat, lon } = await getLocationDetails(location);
 
-    // Fetch nearby hotels (radius 4km, limit 10)
+    // Fetch nearby hotels
     const { data: list } = await axiosWithRetry(`${BASE}/en/places/radius`, {
       params: {
         radius: 4000,
@@ -70,10 +85,10 @@ export const getHotelsForLocation = withCache(
       },
     });
 
-    // Fetch detailed info for each hotel in parallel
+    // Fetch details for each hotel
     const details = await Promise.all(list.map((h) => getHotelDetails(h.xid)));
 
-    // Map final result
+    // Map final response
     return list
       .map((h, i) => {
         const d = details[i];
