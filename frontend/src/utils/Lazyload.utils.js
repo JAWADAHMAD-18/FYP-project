@@ -11,51 +11,49 @@ const loader = new GLTFLoader();
  * @returns {Promise<THREE.Group>} Loaded GLTF.scene
  */
 export function lazyLoadGLB(url, onProgress = null) {
-    // ✔ Return cached model instantly
-    if (gltfCache.has(url)) {
-        return Promise.resolve(gltfCache.get(url).clone());
-    }
+  // ✔ Return cached model instantly
+  if (gltfCache.has(url)) {
+    return Promise.resolve(gltfCache.get(url).clone());
+  }
 
-    return new Promise((resolve, reject) => {
-        let hasRetried = false;
-        let timeoutId;
+  return new Promise((resolve, reject) => {
+    let hasRetried = false;
+    let timeoutId;
 
-        const loadModel = () => {
-            timeoutId = setTimeout(() => {
-                reject(new Error("Model loading timeout (30s)."));
-            }, 30000);
+    const loadModel = () => {
+      timeoutId = setTimeout(() => {
+        reject(new Error("Model loading timeout (30s)."));
+      }, 30000);
 
-            loader.load(
-                url,
-                (gltf) => {
-                    clearTimeout(timeoutId);
+      loader.load(
+        url,
+        (gltf) => {
+          clearTimeout(timeoutId);
 
-                    // ✔ Cache the original scene
-                    gltfCache.set(url, gltf.scene);
+          gltfCache.set(url, gltf.scene);
 
-                    // ✔ Return a **clone**, never the original cached object
-                    resolve(gltf.scene.clone());
-                },
-                (event) => {
-                    if (onProgress && event.total) {
-                        const percent = Math.round((event.loaded / event.total) * 100);
-                        onProgress(percent);
-                    }
-                },
-                (err) => {
-                    clearTimeout(timeoutId);
+          resolve(gltf.scene.clone());
+        },
+        (event) => {
+          if (onProgress && event.total) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            onProgress(percent);
+          }
+        },
+        (err) => {
+          clearTimeout(timeoutId);
 
-                    // ✔ Retry once
-                    if (!hasRetried) {
-                        hasRetried = true;
-                        loadModel();
-                    } else {
-                        reject(err);
-                    }
-                }
-            );
-        };
+          // ✔ Retry once
+          if (!hasRetried) {
+            hasRetried = true;
+            loadModel();
+          } else {
+            reject(err);
+          }
+        }
+      );
+    };
 
-        loadModel();
-    });
+    loadModel();
+  });
 }
