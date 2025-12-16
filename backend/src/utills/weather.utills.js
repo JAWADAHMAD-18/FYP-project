@@ -1,14 +1,14 @@
 import axios from "axios";
 import { ApiError } from "./apiError.utills.js";
-import { withCache, cacheKey, TTL } from "./cache.utills.js";
+import { withCache, TTL } from "./cache.utills.js";
 
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const GEO_URL = "http://api.openweathermap.org/geo/1.0/direct";
 const WEATHER_URL = "https://api.openweathermap.org/data/3.0/onecall";
 
-// Validate request
 const validateWeatherRequest = (location, startDate, endDate) => {
-  if (!location?.trim()) throw new ApiError(400, "Location is required");
+  const loc = location?.trim();
+  if (!loc) throw new ApiError(400, "Location is required");
 
   if (!(startDate instanceof Date) || !(endDate instanceof Date))
     throw new ApiError(400, "Dates must be valid Date objects");
@@ -22,11 +22,22 @@ const validateWeatherRequest = (location, startDate, endDate) => {
   return days;
 };
 
-// Get coordinates (cached)
+const axiosWithRetry = async (url, options, retries = 2) => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await axios.get(url, { ...options, timeout: 5000 });
+      return response;
+    } catch (err) {
+      if (attempt === retries) throw err; // final attempt failed
+    }
+  }
+};
+
 const getLocationCoordinates = withCache(
   async (location) => {
-    const { data } = await axios.get(GEO_URL, {
-      params: { q: location, limit: 1, appid: OPENWEATHER_API_KEY },
+    const safeLocation = encodeURIComponent(location); // sanitize input
+    const { data } = await axiosWithRetry(GEO_URL, {
+      params: { q: safeLocation, limit: 1, appid: OPENWEATHER_API_KEY },
     });
 
     if (!data?.length)
@@ -38,10 +49,9 @@ const getLocationCoordinates = withCache(
   TTL.WEATHER
 );
 
-// Get weather data (cached)
 const getWeatherData = withCache(
   async (lat, lon, days) => {
-    const { data } = await axios.get(WEATHER_URL, {
+    const { data } = await axiosWithRetry(WEATHER_URL, {
       params: {
         lat,
         lon,
@@ -70,7 +80,6 @@ const getWeatherData = withCache(
   TTL.WEATHER
 );
 
-// Main function
 export const getWeatherForLocation = async (location, startDate, endDate) => {
   try {
     const days = validateWeatherRequest(location, startDate, endDate);

@@ -1,7 +1,4 @@
-// ============================================
-// REDIS UTILITIES - SESSION MANAGEMENT
-// Travel with Jawad - Jawad Tech Group
-// ============================================
+
 
 import { redisClient } from '../config/redis.config.js';
 
@@ -28,7 +25,7 @@ const getUserSession = async (sessionId) => {
         const messages = JSON.parse(sessionData);
         return Array.isArray(messages) ? messages : [];
     } catch (error) {
-        console.error('❌ Error getting session:', error.message);
+        console.error('Error getting session:', error.message);
         return [];
     }
 };
@@ -55,7 +52,7 @@ const saveUserSession = async (sessionId, messages) => {
 
         return true;
     } catch (error) {
-        console.error('❌ Error saving session:', error.message);
+        console.error(' Error saving session:', error.message);
         return false;
     }
 };
@@ -78,7 +75,7 @@ const addMessageToSession = async (sessionId, role, content) => {
         // Save updated session
         return await saveUserSession(sessionId, messages);
     } catch (error) {
-        console.error('❌ Error adding message to session:', error.message);
+        console.error(' Error adding message to session:', error.message);
         return false;
     }
 };
@@ -94,7 +91,7 @@ const clearUserSession = async (sessionId) => {
         await redisClient.del(sessionKey);
         return true;
     } catch (error) {
-        console.error('❌ Error clearing session:', error.message);
+        console.error('Error clearing session:', error.message);
         return false;
     }
 };
@@ -110,7 +107,7 @@ const sessionExists = async (sessionId) => {
         const exists = await redisClient.exists(sessionKey);
         return exists === 1;
     } catch (error) {
-        console.error('❌ Error checking session:', error.message);
+        console.error('Error checking session:', error.message);
         return false;
     }
 };
@@ -126,7 +123,7 @@ const getSessionTTL = async (sessionId) => {
         const ttl = await redisClient.ttl(sessionKey);
         return ttl;
     } catch (error) {
-        console.error('❌ Error getting session TTL:', error.message);
+        console.error('Error getting session TTL:', error.message);
         return -2;
     }
 };
@@ -140,7 +137,7 @@ const getAllSessions = async () => {
         const keys = await redisClient.keys('session:*');
         return keys;
     } catch (error) {
-        console.error('❌ Error getting all sessions:', error.message);
+        console.error('Error getting all sessions:', error.message);
         return [];
     }
 };
