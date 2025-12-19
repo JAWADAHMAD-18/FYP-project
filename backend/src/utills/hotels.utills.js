@@ -1,115 +1,90 @@
 import axios from "axios";
 import { ApiError } from "./apiError.utills.js";
 import { withCache, cacheKey, TTL } from "./cache.utills.js";
+import { getAmadeusAccessToken } from "./amadeus.auth.js";
+import { getCityIATACode } from "./locations.utils.js";
 
-const OPENTRIPMAP_API_KEY = process.env.OPENTRIPMAP_API_KEY;
-const BASE = "https://api.opentripmap.com/0.1";
+const AMADEUS_V1 = "https://test.api.amadeus.com/v1";
+const AMADEUS_V3 = "https://test.api.amadeus.com/v3";
 
-// Validate and sanitize location
-const validateLocation = (location) => {
-  location = (location || "").trim();
-  if (location.length < 2)
-    throw new ApiError(400, "Location must be at least 2 characters");
-  return location;
-};
+export const searchHotelsWithAvailability = withCache(
+  async ({ cityName, checkInDate, checkOutDate, adults = 1 }) => {
+    // 1️⃣ City → IATA
+    const cityCode = await getCityIATACode(cityName);
+    const token = await getAmadeusAccessToken();
 
-// Axios with retry
-const axiosWithRetry = async (url, options, retries = 2) => {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await axios.get(url, { ...options, timeout: 10000 }); // 10s timeout
-    } catch (err) {
-      if (attempt === retries) throw err;
-    }
-  }
-};
+    // 2️⃣ Get hotel reference list
+    const hotelRes = await axios.get(
+      `${AMADEUS_V1}/reference-data/locations/hotels/by-city`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { cityCode },
+      }
+    );
 
-// Fetch geoname with automatic country fallback
-const getLocationDetails = withCache(
-  async (location) => {
-    let safeLocation = encodeURIComponent(location);
-
-    // Append country code if missing (simple check for Lahore example)
-    if (!safeLocation.includes(",")) {
-      safeLocation += "%2CPK"; // default to Pakistan
+    const hotels = hotelRes?.data?.data;
+    if (!hotels?.length) {
+      throw new ApiError(404, "No hotels found");
     }
 
-    const { data } = await axiosWithRetry(`${BASE}/en/places/geoname`, {
-      params: { name: safeLocation, apikey: OPENTRIPMAP_API_KEY },
-    });
+    // Limit to avoid Amadeus hard limits
+    const hotelIds = hotels.slice(0, 20).map((h) => h.hotelId);
 
-    if (!data || !data.lat || !data.lon) {
-      throw new ApiError(404, `Location not found: ${location}`);
-    }
-
-    return data;
-  },
-  (location) => `location:${location}`,
-  TTL.HOTELS
-);
-
-// Fetch hotel details by xid
-const getHotelDetails = withCache(
-  async (id) => {
-    try {
-      const { data } = await axiosWithRetry(`${BASE}/en/places/xid/${id}`, {
-        params: { apikey: OPENTRIPMAP_API_KEY },
-      });
-      return data;
-    } catch (error) {
-      console.error(`Error fetching hotel details for ${id}:`, error.message);
-      return null;
-    }
-  },
-  (id) => `hotel:${id}`,
-  TTL.HOTELS
-);
-
-// Main function: get hotels for a location
-export const getHotelsForLocation = withCache(
-  async (location) => {
-    location = validateLocation(location);
-
-    // Get coordinates
-    const { lat, lon } = await getLocationDetails(location);
-
-    // Fetch nearby hotels
-    const { data: list } = await axiosWithRetry(`${BASE}/en/places/radius`, {
+    // 3️⃣ Get availability + pricing
+    const offersRes = await axios.get(`${AMADEUS_V3}/shopping/hotel-offers`, {
+      headers: { Authorization: `Bearer ${token}` },
       params: {
-        radius: 4000,
-        lat,
-        lon,
-        kinds: "hotels",
-        limit: 6,
-        apikey: OPENTRIPMAP_API_KEY,
+        hotelIds: hotelIds.join(","),
+        checkInDate,
+        checkOutDate,
+        adults,
       },
     });
 
-    // Fetch details for each hotel
-    const details = await Promise.all(list.map((h) => getHotelDetails(h.xid)));
+    const offers = offersRes?.data?.data || [];
 
-    // Map final response
-    return list
-      .map((h, i) => {
-        const d = details[i];
-        if (!d) return null;
-        return {
-          name: h.name,
-          rating: h.rate || "N/A",
-          location: {
-            lat: h.point.lat,
-            lon: h.point.lon,
-            address: d.address || {},
-          },
-          description: d.info?.descr || "",
-          priceLevel: d.price_level || "Contact for prices",
-          phone: d.phone,
-          website: d.url,
-          preview: d.preview || null,
-        };
-      })
-      .filter(Boolean);
+    // 4️⃣ Merge reference + availability
+    const merged = hotels.map((hotel) => {
+      const hotelOffer = offers.find((o) => o.hotel?.hotelId === hotel.hotelId);
+
+      return {
+        hotelId: hotel.hotelId,
+        name: hotel.name,
+        rating: hotel.rating || null,
+        chainCode: hotel.chainCode || null,
+        geo: hotel.geoCode,
+        address: hotel.address,
+        available: Boolean(hotelOffer),
+        offers: hotelOffer
+          ? hotelOffer.offers.map((o) => ({
+              roomType: o.room?.type,
+              bedType: o.room?.typeEstimated?.bedType,
+              price: {
+                currency: o.price?.currency,
+                total: o.price?.total,
+              },
+              cancellation: o.policies?.cancellations || [],
+            }))
+          : [],
+      };
+    });
+
+    return {
+      city: cityName,
+      cityCode,
+      checkInDate,
+      checkOutDate,
+      adults,
+      totalHotels: merged.length,
+      hotels: merged,
+    };
   },
-  (location) => cacheKey.hotels(location),
+  (params) =>
+    cacheKey.hotelSearch(
+      params.cityName,
+      params.checkInDate,
+      params.checkOutDate,
+      params.adults
+    ),
   TTL.HOTELS
 );
