@@ -1,14 +1,12 @@
 import axios from "axios";
 import { ApiError } from "./apiError.utills.js";
 import { withCache, cacheKey, TTL } from "./cache.utills.js";
-import { getAmadeusAccessToken } from "./amadeus.auth.js";
+import { getAmadeusAccessToken } from "../Auth/amadeus.auth.js";
 import { getCityIATACode } from "./locations.utils.js";
 
 const AMADEUS_BASE = "https://test.api.amadeus.com/v2";
 
-// --------------------
-// Axios wrapper with retries
-// --------------------
+
 const axiosWithRetry = async (config, retries = 2) => {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -27,9 +25,7 @@ const axiosWithRetry = async (config, retries = 2) => {
   }
 };
 
-// --------------------
 // Core: Search Flights
-// --------------------
 export const searchFlights = withCache(
   async ({
     originCity,
@@ -44,14 +40,13 @@ export const searchFlights = withCache(
     }
 
     try {
-      // 1️⃣ City → IATA
       const origin = await getCityIATACode(originCity);
       const destination = await getCityIATACode(destinationCity);
 
-      // 2️⃣ Get token
+      //  Get token
       const token = await getAmadeusAccessToken();
 
-      // 3️⃣ Fetch flights
+      //  Fetch flights
       const { data } = await axiosWithRetry({
         method: "GET",
         url: `${AMADEUS_BASE}/shopping/flight-offers`,
@@ -73,7 +68,7 @@ export const searchFlights = withCache(
         return []; // No flights found
       }
 
-      // 4️⃣ Normalize
+      //  Normalize
       return data.data.map((offer) => {
         const itinerary = offer.itineraries[0];
         const segment = itinerary.segments[0];

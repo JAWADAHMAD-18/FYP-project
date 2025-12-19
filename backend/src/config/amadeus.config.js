@@ -1,5 +1,3 @@
-// amadeus.config.js
-
 const AMADEUS_CONFIG = {
   environment: process.env.AMADEUS_ENV || "test",
 
