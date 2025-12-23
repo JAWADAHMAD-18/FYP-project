@@ -1,7 +1,7 @@
 import axios from "axios";
 import { ApiError } from "./apiError.utills.js";
 import { withCache, cacheKey, TTL } from "./cache.utills.js";
-import { getAmadeusAccessToken } from "./amadeus.auth.js";
+import { getAmadeusAccessToken } from "../Auth/amadeus.auth.js";
 
 const AMADEUS_BASE = "https://test.api.amadeus.com/v1";
 

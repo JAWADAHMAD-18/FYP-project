@@ -15,8 +15,11 @@ export const TTL = {
 export const cacheKey = {
   weather: (location, start, end) => `weather:${location}:${start}:${end}`,
   hotels: (location) => `hotels:${location}`,
-  flights: (destinations, start, end) =>
-    `flights:${destinations.join(",")}:${start}:${end}`,
+  hotelSearch: (city, checkIn, checkOut, adults) =>
+    `hotels:${city}:${checkIn}:${checkOut}:${adults}`,
+  city: (city) => `city:${city}`,
+  flights: (originCity, destinationCity, start, end, adults) =>
+    `flights:${originCity}-${destinationCity}:${start}:${end}:${adults}`,
 };
 
 export const cacheService = {

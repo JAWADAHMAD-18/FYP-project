@@ -1,19 +1,21 @@
 import axios from "axios";
 import { ApiError } from "./apiError.utills.js";
 import { withCache, cacheKey, TTL } from "./cache.utills.js";
-import { getAmadeusAccessToken } from "./amadeus.auth.js";
-import { getCityIATACode } from "./locations.utils.js";
+import { getAmadeusAccessToken } from "../Auth/amadeus.auth.js";
+import { getCityIATACode } from "./locations.utills.js";
 
 const AMADEUS_V1 = "https://test.api.amadeus.com/v1";
 const AMADEUS_V3 = "https://test.api.amadeus.com/v3";
 
 export const searchHotelsWithAvailability = withCache(
   async ({ cityName, checkInDate, checkOutDate, adults = 1 }) => {
-    // 1️⃣ City → IATA
+    //  Convert city name to IATA code
     const cityCode = await getCityIATACode(cityName);
+
+    //  Get Amadeus access token
     const token = await getAmadeusAccessToken();
 
-    // 2️⃣ Get hotel reference list
+    //  Fetch hotel reference list for the city
     const hotelRes = await axios.get(
       `${AMADEUS_V1}/reference-data/locations/hotels/by-city`,
       {
@@ -27,10 +29,11 @@ export const searchHotelsWithAvailability = withCache(
       throw new ApiError(404, "No hotels found");
     }
 
-    // Limit to avoid Amadeus hard limits
-    const hotelIds = hotels.slice(0, 20).map((h) => h.hotelId);
+    // Limit hotel IDs to avoid hitting Amadeus API hard limits
+    const hotelIds = hotels.slice(0, 10).map((h) => h.hotelId);
 
-    // 3️⃣ Get availability + pricing
+    // Get hotel availability & pricing
+    // Note: checkInDate/checkOutDate are passed as-is to Amadeus for availability
     const offersRes = await axios.get(`${AMADEUS_V3}/shopping/hotel-offers`, {
       headers: { Authorization: `Bearer ${token}` },
       params: {
@@ -43,7 +46,6 @@ export const searchHotelsWithAvailability = withCache(
 
     const offers = offersRes?.data?.data || [];
 
-    // 4️⃣ Merge reference + availability
     const merged = hotels.map((hotel) => {
       const hotelOffer = offers.find((o) => o.hotel?.hotelId === hotel.hotelId);
 
@@ -72,13 +74,14 @@ export const searchHotelsWithAvailability = withCache(
     return {
       city: cityName,
       cityCode,
-      checkInDate,
-      checkOutDate,
+      checkInDate, // start date passed by user for hotel search
+      checkOutDate, // end date passed by user for hotel search
       adults,
       totalHotels: merged.length,
       hotels: merged,
     };
   },
+  // Cache key based on city + dates + adults
   (params) =>
     cacheKey.hotelSearch(
       params.cityName,

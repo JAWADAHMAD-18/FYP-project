@@ -2,10 +2,9 @@ import axios from "axios";
 import { ApiError } from "./apiError.utills.js";
 import { withCache, cacheKey, TTL } from "./cache.utills.js";
 import { getAmadeusAccessToken } from "../Auth/amadeus.auth.js";
-import { getCityIATACode } from "./locations.utils.js";
+import { getCityIATACode } from "./locations.utills.js";
 
 const AMADEUS_BASE = "https://test.api.amadeus.com/v2";
-
 
 const axiosWithRetry = async (config, retries = 2) => {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -14,7 +13,6 @@ const axiosWithRetry = async (config, retries = 2) => {
     } catch (err) {
       const status = err.response?.status;
       if (status === 401 && attempt < retries) {
-        // Token might be expired, refresh and retry
         console.warn("401 Unauthorized, retrying with fresh token...");
       } else if (attempt === retries) {
         throw err;
@@ -25,7 +23,19 @@ const axiosWithRetry = async (config, retries = 2) => {
   }
 };
 
-// Core: Search Flights
+const validateDates = (departureDate, returnDate) => {
+  const dep = new Date(departureDate);
+  const ret = new Date(returnDate);
+
+  if (isNaN(dep.getTime()) || isNaN(ret.getTime())) {
+    throw new ApiError(400, "Invalid date format. Use YYYY-MM-DD");
+  }
+  if (ret < dep) {
+    throw new ApiError(400, "Return date must be after departure date");
+  }
+  return { dep, ret };
+};
+
 export const searchFlights = withCache(
   async ({
     originCity,
@@ -39,20 +49,19 @@ export const searchFlights = withCache(
       throw new ApiError(400, "Origin and destination cities are required");
     }
 
+    // Validate dates
+    validateDates(departureDate, returnDate);
+
     try {
       const origin = await getCityIATACode(originCity);
       const destination = await getCityIATACode(destinationCity);
 
-      //  Get token
       const token = await getAmadeusAccessToken();
 
-      //  Fetch flights
       const { data } = await axiosWithRetry({
         method: "GET",
         url: `${AMADEUS_BASE}/shopping/flight-offers`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         params: {
           originLocationCode: origin,
           destinationLocationCode: destination,
@@ -68,7 +77,6 @@ export const searchFlights = withCache(
         return []; // No flights found
       }
 
-      //  Normalize
       return data.data.map((offer) => {
         const itinerary = offer.itineraries[0];
         const segment = itinerary.segments[0];
