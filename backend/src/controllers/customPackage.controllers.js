@@ -12,28 +12,33 @@ const parseAndValidateDates = (start_date, end_date) => {
   const start = new Date(start_date);
   const end = new Date(end_date);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime()))
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
     throw new ApiError(400, "Invalid date format. Use YYYY-MM-DD");
+  }
 
-  if (start >= end)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (start < today) {
+    throw new ApiError(400, "Start date cannot be in the past");
+  }
+
+  if (start >= end) {
     throw new ApiError(400, "End date must be after start date");
+  }
 
   const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-  if (days > MAX_TRIP_DURATION_DAYS)
+  if (days > MAX_TRIP_DURATION_DAYS) {
     throw new ApiError(400, "Trip duration cannot exceed 12 days");
-
-  if (start < new Date().setHours(0, 0, 0, 0))
-    throw new ApiError(400, "Start date cannot be in the past");
+  }
 
   return { start, end };
 };
 
-// ---- Controller ----
 export const createCustomPackage = asyncHandler(async (req, res) => {
-  const { tripType, locations, start_date, end_date } = req.body;
+  const { tripType, locations, start_date, end_date, adults = 1 } = req.body;
 
-  // ---- Basic validation ----
   if (!["domestic", "international"].includes(tripType)) {
     throw new ApiError(400, "Trip type must be 'domestic' or 'international'");
   }
@@ -42,67 +47,74 @@ export const createCustomPackage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "At least one location is required");
   }
 
-  //  Dates
   const { start, end } = parseAndValidateDates(start_date, end_date);
 
-  // ---- Per-location data ----
-  const locationResults = await Promise.all(
-    locations.map(async (city) => {
-      const result = { name: city };
+  // ✅ DESTINATION CITY ONLY
+  const destinationCity = locations[locations.length - 1];
 
-      // Weather (Date objects)
-      try {
-        const maxWeatherEnd = new Date(
-          Math.min(end.getTime(), start.getTime() + 5 * 24 * 60 * 60 * 1000)
-        );
+  const destination = {
+    name: destinationCity,
+  };
 
-        result.weather = await getWeatherForLocation(
-          city,
-          start,
-          maxWeatherEnd
-        );
-      } catch (err) {
-        result.weatherError = err.message;
-      }
+  // -------- WEATHER (destination only)
+  try {
+    const maxWeatherEnd = new Date(
+      Math.min(end.getTime(), start.getTime() + 5 * 24 * 60 * 60 * 1000)
+    );
 
-      try {
-        result.hotels = await searchHotelsWithAvailability({
-          cityName: city,
-          checkInDate: start_date,
-          checkOutDate: end_date,
-          adults: 1,
-        });
-      } catch (err) {
-        result.hotelsError = err.message;
-      }
+    destination.weather = await getWeatherForLocation(
+      destinationCity,
+      start,
+      maxWeatherEnd
+    );
+  } catch (err) {
+    destination.weatherError = err.message;
+  }
 
-      return result;
-    })
-  );
+  // -------- HOTELS (destination only)
+  try {
+    const hotelResult = await searchHotelsWithAvailability({
+      cityName: destinationCity,
+      checkInDate: start_date,
+      checkOutDate: end_date,
+      adults,
+    });
 
+    destination.totalHotels = hotelResult.totalHotels;
+    destination.hotels = hotelResult.hotels;
+  } catch (err) {
+    destination.hotelsError = err.message;
+  }
+
+  // -------- FLIGHTS
   let flights;
   if (tripType === "international" && locations.length >= 2) {
     try {
-      flights = await searchFlights({
+      const flightOffers = await searchFlights({
         originCity: locations[0],
-        destinationCity: locations[locations.length - 1],
+        destinationCity: destinationCity,
         departureDate: start_date,
         returnDate: end_date,
-        adults: 1,
+        adults,
       });
+
+      flights = {
+        count: flightOffers.length,
+        offers: flightOffers,
+      };
     } catch (err) {
       flights = { error: err.message };
     }
   }
 
-  // ---- Final response ----
   return res.status(200).json(
     new ApiResponse(200, "Custom package created successfully", {
       tripType,
       start_date,
       end_date,
-      locations: locationResults,
-      flights: tripType === "international" ? flights : undefined,
+      adults,
+      destination,
+      flights,
       created_at: new Date().toISOString(),
     })
   );
