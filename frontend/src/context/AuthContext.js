@@ -1,6 +1,5 @@
-// AuthContext.js
 import { createContext, useContext, useState, useEffect } from "react";
-import api from "../api/Api.js"; // using your axios instance
+import api from "../api/Api.js";
 
 const AuthContext = createContext();
 
@@ -22,6 +21,7 @@ export function AuthProvider({ children }) {
       });
       return res.data?.data?.user || null;
     } catch (err) {
+      console.log("Error from auth context during getting user ", err);
       return null;
     }
   };
@@ -42,6 +42,11 @@ export function AuthProvider({ children }) {
           setUser(userData);
         }
       } catch (err) {
+        console.log(
+          "Error from auth context useEffect during refresh token  ",
+          err
+        );
+
         setAccessToken(null);
         setUser(null);
       } finally {
@@ -69,7 +74,9 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await api.post("/users/logout");
-    } catch (_) {}
+    } catch (err) {
+      console.log("Error during logout user in authcontext", err);
+    }
 
     setAccessToken(null);
     setUser(null);
