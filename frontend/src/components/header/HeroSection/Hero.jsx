@@ -97,4 +97,3 @@ export default function Hero() {
   );
 }
 
-// Model preloading not required: Model component handles loading from public folder
