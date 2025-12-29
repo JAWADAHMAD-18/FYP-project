@@ -1,7 +1,4 @@
-// ============================================
-// CHAT ROUTES
-// Travel with Jawad - Jawad Tech Group
-// ============================================
+
 
 import express from 'express';
 const router = express.Router();
@@ -11,7 +8,7 @@ import {
   getSessionHistory,
   deleteSession,
   healthCheck
-} from '../controllers/chat.controller.js';
+} from '../controllers/chatBot.controller.js';
 
 // Health check route
 router.get('/health', healthCheck);

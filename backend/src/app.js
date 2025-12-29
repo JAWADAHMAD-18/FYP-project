@@ -18,13 +18,13 @@ import userRoutes from "./routes/users.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import packageRoutes from "./routes/packages.routes.js";
 import customPackageRoutes from "./routes/customPackage.routes.js";
-import chatRoutes from "./routes/chat.routes.js";
+import chatBotRoutes from "./routes/chatBot.routes.js";
 
 // Route mounting
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1", packageRoutes); // Public package routes
 app.use("/api/v1", customPackageRoutes); // Custom package routes
-app.use('/api/v1/chat', chatRoutes); // Chatbot endpoint
+app.use('/api/v1/chat', chatBotRoutes); // Chatbot endpoint
 
 export default app;
