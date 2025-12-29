@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../context/useAuth.js";
 import Btn from "../../buttons/Navbarbutt";
 import gsap from "gsap";
 

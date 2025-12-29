@@ -1,17 +1,11 @@
-
-import './App.css'
-import Navbar from './components/header/nabar/Navbar'
-import Hero from './components/header/HeroSection/Hero'
+import "./App.css";
+import LandingPage from "./pages/LandingPage.jsx";
 function App() {
-
   return (
     <>
-     
-    <Navbar/>
-    <Hero/>
-
+      <LandingPage />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
