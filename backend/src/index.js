@@ -2,8 +2,16 @@ import dotenv from "dotenv";
 import app from "./app.js";
 import db_connection from "./db/index.js";
 import { connectRedis } from "./config/redis.config.js";
+import http from "http"; // for creating server
+import { initSocket } from "./Sockets/index.js";
 // load environment variables from backend/.env (src is one level deeper)
 dotenv.config({ path: "../.env" });
+
+// Initialize HTTP server and Socket.io
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+initSocket(server);
 
 const PORT = process.env.PORT || 4000;
 
