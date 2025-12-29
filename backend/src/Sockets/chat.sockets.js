@@ -1,67 +1,40 @@
-import Conversation from "../models/Conversation.model.js";
-import Message from "../models/Message.model.js";
+import ChatService from "../services/chat.service.js";
 
 export default function registerChatHandlers(io, socket) {
-  // Every user joins personal room
+  // JOIN USER- AND ADMIN- SPECIFIC ROOMS
   socket.join(`user:${socket.user.id}`);
 
-  // Admins join admin room
   if (socket.user.isAdmin) {
     socket.join("admins");
   }
 
+  // START CHAT (USER)
   socket.on("chat:start", async () => {
     try {
-      // Find existing conversation
-      let conversation = await Conversation.findOne({
-        user: socket.user.id,
-      });
+      const conversation = await ChatService.getOrCreateConversation(
+        socket.user.id
+      );
 
-      // If not exists
-      if (!conversation) {
-        conversation = await Conversation.create({
-          user: socket.user.id,
-          status: "open",
-        });
-      }
-
-      // Join conversation room
       socket.join(`conversation:${conversation._id}`);
-
       socket.emit("chat:ready", conversation);
     } catch (err) {
       socket.emit("chat:error", "Failed to start chat");
     }
   });
 
+  // ACCEPT CHAT (ADMIN)
   socket.on("chat:accept", async ({ conversationId }) => {
     try {
       if (!socket.user.isAdmin) return;
 
-      const conversation = await Conversation.findById(conversationId);
+      const result = await ChatService.assignAdmin(conversationId, socket.user);
 
-      if (!conversation) return;
+      if (!result) return;
 
-      // Already assigned?
-      if (conversation.assignedAdmin) return;
+      const { conversation, systemMessage } = result;
 
-      conversation.assignedAdmin = socket.user.id;
-      conversation.status = "assigned";
-      await conversation.save();
-
-      // Admin joins room
       socket.join(`conversation:${conversation._id}`);
 
-      // Create system message
-      const systemMessage = await Message.create({
-        conversation: conversation._id,
-        sender: socket.user.id,
-        senderRole: "admin",
-        type: "system",
-        text: `Your request has been accepted by ${socket.user.name}`,
-      });
-
-      // Notify both sides
       io.to(`conversation:${conversation._id}`).emit(
         "chat:system",
         systemMessage
@@ -71,45 +44,34 @@ export default function registerChatHandlers(io, socket) {
     }
   });
 
+  // SEND MESSAGE (USER OR ADMIN)
   socket.on("chat:message", async ({ conversationId, text }) => {
     try {
-      if (!text?.trim()) return;
+      const senderRole = socket.user.isAdmin ? "admin" : "user";
 
-      const conversation = await Conversation.findById(conversationId);
-      if (!conversation) return;
-
-      // Admin restriction only
-      if (
-        socket.user.isAdmin &&
-        conversation.assignedAdmin?.toString() !== socket.user.id
-      ) {
-        return;
-      }
-
-      const message = await Message.create({
-        conversation: conversation._id,
-        sender: socket.user.id,
-        senderRole: socket.user.isAdmin ? "admin" : "user",
+      const message = await ChatService.saveMessage({
+        conversationId,
+        sender: socket.user,
+        senderRole,
         text,
       });
 
-      conversation.lastMessage = message._id;
-      conversation.lastMessageAt = new Date();
-      await conversation.save();
-
-      io.to(`conversation:${conversation._id}`).emit("chat:message", message);
+      io.to(`conversation:${conversationId}`).emit("chat:message", message);
     } catch (err) {
-      socket.emit("chat:error", "Message failed");
+      socket.emit("chat:error", err.message || "Message failed");
     }
   });
 
+  // CLOSE CONVERSATION (ADMIN)
   socket.on("chat:close", async ({ conversationId }) => {
-    if (!socket.user.isAdmin) return;
+    try {
+      if (!socket.user.isAdmin) return;
 
-    await Conversation.findByIdAndUpdate(conversationId, {
-      status: "closed",
-    });
+      await ChatService.closeConversation(conversationId, socket.user);
 
-    // no notification to users on close for now
+      // Graceful: no emit to user
+    } catch (err) {
+      socket.emit("chat:error", "Failed to close chat");
+    }
   });
 }
