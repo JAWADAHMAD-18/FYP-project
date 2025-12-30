@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../../context/useAuth.js";
-import Btn from "../../buttons/Navbarbutt";
+import Btn from "../../buttons/Navbarbutt.jsx";
 import gsap from "gsap";
 
 export default function Navbar() {

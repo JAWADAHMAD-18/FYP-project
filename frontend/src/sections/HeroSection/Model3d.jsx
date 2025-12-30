@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
-import { lazyLoadGLB } from "../../../utils/Lazyload.utils.js";
+import { lazyLoadGLB } from "../../utils/Lazyload.utils.js";
 
 const MODEL_URL = "/models/aeroplane.glb";
 
