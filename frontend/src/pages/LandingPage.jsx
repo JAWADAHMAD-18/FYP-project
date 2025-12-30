@@ -1,6 +1,7 @@
-import Navbar from "../components/header/nabar/Navbar";
-import Hero from "../components/header/HeroSection/Hero";
-import Services from "../components/Landingpagecomp/Services.jsx";
+import Navbar from "../components/header/navbar/Navbar";
+import Hero from "../sections/HeroSection/Hero";
+import Services from "../sections/landingPage/Services";
+import PackagesSection from "../sections/landingPage/Packages";
 
 function LandingPage() {
   return (
@@ -8,6 +9,7 @@ function LandingPage() {
       <Navbar />
       <Hero />
       <Services />
+      <PackagesSection />
     </>
   );
 }

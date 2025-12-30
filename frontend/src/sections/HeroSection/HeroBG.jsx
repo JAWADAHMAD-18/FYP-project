@@ -1,13 +1,12 @@
-import React from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 // Import images correctly - relative to src folder
-import mountainImg from "../../../assets/images/mountain.jpg";
-import beachImg from "../../../assets/images/beach.jpg";
-import adventureImg from "../../../assets/images/adventure.jpg";
-import historicalImg from "../../../assets/images/historical.jpg";
-import cityImg from "../../../assets/images/city.jpg";
+import mountainImg from "../../assets/images/mountain.jpg";
+import beachImg from "../../assets/images/beach.jpg";
+import adventureImg from "../../assets/images/adventure.jpg";
+import historicalImg from "../../assets/images/historical.jpg";
+import cityImg from "../../assets/images/city.jpg";
 
 const images = [mountainImg, beachImg, adventureImg, historicalImg, cityImg];
 
