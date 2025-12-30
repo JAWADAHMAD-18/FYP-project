@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-
+//TODO add feature and higlights for more info in  a single 
 const packageSchema = new Schema(
   {
     title: {
