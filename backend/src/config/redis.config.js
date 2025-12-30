@@ -7,7 +7,7 @@ const redisClient = createClient({
   url: process.env.REDIS_URL,
   socket: {
     reconnectStrategy: (retries) => {
-      if (retries > 5) {
+      if (retries > 2) {
         console.error("❌ Redis: Too many reconnection attempts");
         return new Error("Redis reconnection failed");
       }

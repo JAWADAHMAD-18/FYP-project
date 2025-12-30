@@ -1,10 +1,11 @@
-import "./App.css";
-import LandingPage from "./pages/LandingPage.jsx";
+import { Outlet } from "react-router-dom";
+import Navbar from "./components/header/navbar/Navbar.jsx";
 function App() {
   return (
-    <>
-      <LandingPage />
-    </>
+    <div>
+      <Navbar />
+      <Outlet /> 
+    </div>
   );
 }
 

@@ -21,41 +21,37 @@ export const generateAccessandRefreshToken = async (userId) => {
 };
 
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, phone } = req.body;
-  //TODO: make All fields required in frontend
-  if (!name || !email || !password || !phone) {
-    throw new ApiError(400, "All fields are required");
+  const { name, email, password } = req.body;
+
+  // Validate required fields
+  if (!name || !email || !password) {
+    throw new ApiError(400, "Name, email and password are required");
   }
+
+  // Check if user already exists
   const existedUser = await User.findOne({ email });
   if (existedUser) {
     throw new ApiError(400, "User already exists");
   }
-  const fileLocalPath = req.file?.path;
 
-  if (!fileLocalPath) {
-    throw new ApiError(400, "Profile pic is required");
-  }
-  const imageUpload = await cloudinaryImageUpload(fileLocalPath);
-  if (!imageUpload) {
-    throw new ApiError(
-      400,
-      "Failed to upload profile pic on cloudinary in controllers"
-    );
-  }
+  // Create new user
   const user = await User.create({
     name,
     email,
     password,
-    phone,
-    profilePic: imageUpload.url,
   });
+
+  // Fetch created user without password
   const createdUser = await User.findOne({ email }).select("-password");
   if (!createdUser) {
     throw new ApiError(500, "Failed to create user");
   }
+
   return res
     .status(201)
-    .json(new ApiResponse(201, "User created successfully"));
+    .json(
+      new ApiResponse(201, "User created successfully", { user: createdUser })
+    );
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -93,7 +89,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 /**
  * Refresh Access Token
- * 
+ *
  * @route POST /api/v1/users/refresh-token
  * @returns {Object} { accessToken } - New access token for client to use in Authorization header
  */
@@ -115,7 +111,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   }
   // Generate a new access token (do not rotate refresh token here, but you can)
   const accessToken = await user.generateAccessToken();
-  
+
   // Secure cookie options: httpOnly prevents XSS, secure requires HTTPS in production, sameSite prevents CSRF
   const cookieOptions = {
     httpOnly: true,
@@ -124,10 +120,14 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
   res.cookie("refreshToken", refreshToken, cookieOptions);
-  
+
   return res
     .status(200)
-    .json(new ApiResponse(200, "Access token refreshed successfully", { accessToken }));
+    .json(
+      new ApiResponse(200, "Access token refreshed successfully", {
+        accessToken,
+      })
+    );
 });
 /**
  * Logout User
@@ -173,16 +173,16 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
   if (!req.user) {
     throw new ApiError(401, "User not authenticated");
   }
-  
+
   // Fetch fresh user data from DB to ensure latest info
   const user = await User.findById(req.user._id)
     .select("-password -refreshToken") // Exclude sensitive fields
     .lean();
-  
+
   if (!user) {
     throw new ApiError(404, "User not found");
   }
-  
+
   return res
     .status(200)
     .json(new ApiResponse(200, "User data retrieved successfully", { user }));

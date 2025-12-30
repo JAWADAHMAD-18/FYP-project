@@ -41,8 +41,8 @@ export default function Navbar() {
           {/* Guest */}
           {!user && (
             <div className="right-menu flex items-center gap-6 ml-auto text-lg font-medium">
-              <Btn className="btn">Login</Btn>
-              <Btn className="btn">Register</Btn>
+              <Btn className="btn" to="/signup">SignUp</Btn>
+              <Btn className="btn" to="/login" >Login</Btn>
             </div>
           )}
 
