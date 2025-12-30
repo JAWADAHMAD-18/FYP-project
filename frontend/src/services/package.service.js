@@ -1,15 +1,19 @@
-import api from "../api/Api.js"; // adjust path if needed
-
+import api from "../api/Api.js";
 
 export const getPackages = async () => {
   try {
-    const response = await api.get("/packages"); // endpoint: /api/v1/packages
+    const response = await api.get("/packages");
 
-    if (!Array.isArray(response.data)) {
-      throw new Error("Invalid response format from API");
-    }
+    const wrapper = response.data || {};
 
-    return response.data;
+    // backend currently sometimes returns packages under wrapper.data or wrapper.message
+    const packages =
+      wrapper?.data?.packages ??
+      wrapper?.message?.packages ??
+      wrapper?.packages ??
+      [];
+
+    return packages;
   } catch (error) {
     console.error("Error fetching packages:", error.message || error);
     throw new Error("Failed to fetch packages. Please try again later.");

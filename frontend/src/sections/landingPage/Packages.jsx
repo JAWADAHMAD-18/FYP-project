@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom"; // for routing
 import PackageCard from "./../../components/Cards/PackagesCard.jsx";
-import PackageSkeleton from "../../components/Loader/PackageSkeleton";
+import PackageSkeleton from "../../components/Loader/PackageSkeleton.jsx";
 import { getPackages } from "../../services/package.service.js";
 
 const PackagesSection = () => {

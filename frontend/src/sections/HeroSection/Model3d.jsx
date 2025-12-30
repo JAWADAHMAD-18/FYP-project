@@ -19,7 +19,7 @@ export default function AirplaneModel(props) {
   // -----------------------------
   useEffect(() => {
     let isMounted = true;
-    console.log("🔵 AirplaneModel mounted");
+    
 
     lazyLoadGLB(MODEL_URL)
       .then((scene) => {
@@ -30,15 +30,6 @@ export default function AirplaneModel(props) {
         bbox.getSize(size);
         const sphere = bbox.getBoundingSphere(new THREE.Sphere());
 
-        console.log("📦 MODEL SIZE:", {
-          width: size.x.toFixed(3),
-          height: size.y.toFixed(3),
-          depth: size.z.toFixed(3),
-        });
-        console.log("🟣 BOUNDING SPHERE:", {
-          radius: sphere.radius.toFixed(3),
-          center: sphere.center,
-        });
 
         // Auto scale to fit nicely
         const desiredSize = 1; // tweak if needed
@@ -76,9 +67,7 @@ export default function AirplaneModel(props) {
     return () => (isMounted = false);
   }, [propScale]);
 
-  // -----------------------------
-  // Subtle tilt animation
-  // -----------------------------
+  
   useEffect(() => {
     if (!model || !ref.current) return;
     ref.current.rotation.z = -0.03;
