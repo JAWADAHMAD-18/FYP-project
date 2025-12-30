@@ -1,23 +1,27 @@
 import { Server } from "socket.io";
-import { socketAuth } from "../middlewares/socketAuth.middleware.js";
-import registerChatHandlers from "./chat.socket.js";
+import { socketAuth } from "../middleware/socketAuth.middleware.js";
+import registerChatHandlers from "./chat.sockets.js";
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: "*",//TODO: chnage this in production only from frontend domain
+      origin: "*", // TODO: restrict in production
       methods: ["GET", "POST"],
       credentials: true,
     },
   });
 
   io.use(socketAuth);
-  console.log("✅ Socket connected:", socket.id);
 
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.user);
+    console.log("✅ Socket connected:", socket.id);
+    console.log("User:", socket.user);
 
     registerChatHandlers(io, socket);
+
+    socket.on("disconnect", () => {
+      console.log("❌ Socket disconnected:", socket.id);
+    });
   });
 
   return io;

@@ -1,80 +1,67 @@
-// ============================================
-// REDIS CONFIGURATION
-// Travel with Jawad - Jawad Tech Group
-// ============================================
-
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
-import redis from 'redis';
+import { createClient } from "redis";
 
-// Create Redis client
-const redisClient = redis.createClient({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
-    // password: process.env.REDIS_PASSWORD, // Uncomment if using password
-    socket: {
-        reconnectStrategy: (retries) => {
-            if (retries > 10) {
-                console.error('❌ Redis: Too many reconnection attempts');
-                return new Error('Redis reconnection failed');
-            }
-            // Reconnect after 1 second
-            return 1000;
-        }
-    }
+const redisClient = createClient({
+  url: process.env.REDIS_URL,
+  socket: {
+    reconnectStrategy: (retries) => {
+      if (retries > 5) {
+        console.error("❌ Redis: Too many reconnection attempts");
+        return new Error("Redis reconnection failed");
+      }
+      return 1000; // Retry after 1 second
+    },
+  },
 });
 
-// Error handling
-redisClient.on('error', (err) => {
-    console.error('❌ Redis Client Error:', err.message);
+// Redis event handlers
+redisClient.on("error", (err) => {
+  console.error("❌ Redis Client Error:", err.message);
 });
 
-// Connection success
-redisClient.on('connect', () => {
-    console.log('✅ Redis: Connecting...');
+redisClient.on("connect", () => {
+  console.log("🔌 Redis: Connecting...");
 });
 
-redisClient.on('ready', () => {
-    console.log('✅ Redis: Connected and ready');
+redisClient.on("ready", () => {
+  console.log("✅ Redis: Connected and ready");
 });
 
-// Reconnection
-redisClient.on('reconnecting', () => {
-    console.log('🔄 Redis: Reconnecting...');
+redisClient.on("reconnecting", () => {
+  console.log("🔄 Redis: Reconnecting...");
 });
 
-// Connection ended
-redisClient.on('end', () => {
-    console.log('⚠️  Redis: Connection closed');
+redisClient.on("end", () => {
+  console.log("⚠️ Redis: Connection closed");
 });
 
-// Connect to Redis
+// Connect Redis (fail-safe)
 const connectRedis = async () => {
+  if (!redisClient.isOpen) {
     try {
-        if (!redisClient.isOpen) {
-            await redisClient.connect();
-        }
+      await redisClient.connect();
     } catch (error) {
-        console.error('❌ Redis Connection Error:', error.message);
-        throw error;
+      console.error(
+        "⚠️ Redis connection failed, continuing without Redis:",
+        error.message
+      );
+      // Do not throw → server continues to run
     }
+  }
 };
 
-// Graceful shutdown
+// Disconnect Redis gracefully
 const disconnectRedis = async () => {
+  if (redisClient.isOpen) {
     try {
-        if (redisClient.isOpen) {
-            await redisClient.quit();
-            console.log('✅ Redis: Disconnected gracefully');
-        }
+      await redisClient.quit();
+      console.log("✅ Redis: Disconnected gracefully");
     } catch (error) {
-        console.error('❌ Redis Disconnect Error:', error.message);
+      console.error("❌ Redis disconnect error:", error.message);
     }
+  }
 };
 
-export {
-    redisClient,
-    connectRedis,
-    disconnectRedis
-};
+export { redisClient, connectRedis, disconnectRedis };
