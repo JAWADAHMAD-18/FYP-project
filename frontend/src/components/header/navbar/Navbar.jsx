@@ -21,13 +21,15 @@ export default function Navbar() {
 
   return (
     <div className="fixed top-0 left-0 w-full h-20 z-20 bg-white/40 backdrop-blur-md shadow-sm">
-      <nav ref={navRef} className="flex justify-between items-center px-6 md:px-12 h-full">
+      <nav
+        ref={navRef}
+        className="flex justify-between items-center px-6 md:px-12 h-full"
+      >
         {/* BRAND */}
         <h1 className="title text-3xl font-bold tracking-wide text-[#0A1A44]">
           TripFusion
         </h1>
 
-        {/* CENTER MENU — LOGGED-IN DESKTOP ONLY */}
         {user && (
           <div className="center-menu hidden md:flex gap-8 text-lg font-medium">
             <Btn className="btn">Home</Btn>
@@ -41,8 +43,12 @@ export default function Navbar() {
           {/* Guest */}
           {!user && (
             <div className="right-menu flex items-center gap-6 ml-auto text-lg font-medium">
-              <Btn className="btn" to="/signup">SignUp</Btn>
-              <Btn className="btn" to="/login" >Login</Btn>
+              <Btn className="btn" to="/signup">
+                SignUp
+              </Btn>
+              <Btn className="btn" to="/login">
+                Login
+              </Btn>
             </div>
           )}
 
