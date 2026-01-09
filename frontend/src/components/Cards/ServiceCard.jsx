@@ -9,9 +9,9 @@ const ServiceCard = ({ title, description, variant = "blue" }) => {
       className={`
         ${variants[variant]}
         text-white
-        p-6
+        p-7
         rounded-2xl
-        min-h-[180px]
+        min-h-[190px]
         flex
         flex-col
         justify-between
@@ -22,8 +22,9 @@ const ServiceCard = ({ title, description, variant = "blue" }) => {
         cursor-pointer
       `}
     >
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm leading-relaxed opacity-95">{description}</p>
+      <h3 className="text-lg font-semibold leading-snug mb-2">{title}</h3>
+
+      <p className="text-sm leading-relaxed text-white/90">{description}</p>
     </div>
   );
 };

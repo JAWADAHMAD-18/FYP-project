@@ -3,59 +3,52 @@ import ServiceCard from "../../components/Cards/ServiceCard";
 const Services = () => {
   const serviceData = [
     {
-      title: "Ready-made trips? Book them instantly!",
+      title: "Travel Made Easy — Pick & Go",
       description:
-        "Pick from our popular travel packages & start your adventure today.",
+        "Choose from carefully crafted travel packages with transparent pricing. Book instantly and start planning with confidence.",
       variant: "blue",
-      // icon: <PackageIcon />
     },
     {
-      title: "Let AI craft your dream trip!",
+      title: "Your Trip, Designed Around You",
       description:
-        "Choose your style & preferences, and our AI will plan it for you. Confirm final details via chat.",
+        "Share your travel style and preferences. Our smart assistant helps shape your journey — you stay in control of the final plan.",
       variant: "teal",
-      // icon: <RobotIcon />
     },
     {
-      title: "Need ideas? AI’s got your back!",
+      title: "Not Sure Where to Go? Let’s Explore",
       description:
-        "Unsure where to go? Our AI assistant gives smart suggestions & travel tips.",
+        "Get thoughtful destination ideas and travel inspiration based on your interests, budget, and available time.",
       variant: "blue",
-      // icon: <RobotIcon />
     },
     {
-      title: "Peek at flights & plan like a pro!",
+      title: "Flight Options, Simplified",
       description:
-        "See popular flights for your destination and plan your trip smartly.",
+        "Discover popular flight routes for your destination and make informed decisions while planning your trip.",
       variant: "teal",
-      // icon: <FlightIcon />
-      // icon: <PlaneIcon />
     },
     {
-      title: "Find the coolest hotels for your stay",
+      title: "Stay Where Comfort Meets Style",
       description:
-        "Explore top-rated hotels & plan your perfect accommodation.",
+        "Browse top-rated hotels and accommodations — from comfortable stays to premium experiences.",
       variant: "blue",
-      // icon: <HotelIcon />
     },
     {
-      title: "Weather check before you go!",
+      title: "Plan Smarter with Weather Insights",
       description:
-        "Sunny, rainy, or snowy—know the weather in advance & pack smart.",
+        "Check current and upcoming weather conditions so you can pack right and travel stress-free.",
       variant: "teal",
-      // icon: <CloudIcon />
     },
   ];
 
   return (
     <section className="py-20 bg-[#f4f6fb]">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Section heading */}
-        <h2 className="text-4xl sm:text-5xl font-extrabold text-[#0A1A44] text-center mb-14">
-          Plan Your Adventure Your Way
+        {/* Section Heading */}
+        <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#0A1A44] text-center mb-14">
+          Plan Your Trip with Confidence
         </h2>
 
-        {/* Cards grid */}
+        {/* Services Grid */}
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {serviceData.map((service, index) => (
             <ServiceCard
@@ -63,7 +56,6 @@ const Services = () => {
               title={service.title}
               description={service.description}
               variant={service.variant}
-              // icon={service.icon} 
             />
           ))}
         </div>

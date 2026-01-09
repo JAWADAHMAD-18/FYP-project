@@ -30,13 +30,13 @@ const PackagesSection = () => {
   }, []);
 
   return (
-    <section className="bg-[#F8FAFF] py-20">
+    <section className="bg-[#F8FAFF] py-10">
       <div className="max-w-7xl mx-auto px-6">
         {/* Heading */}
         <div className="text-center mb-14">
-          <h2 className="text-4xl font-bold text-[#0A1A44]">Travel Packages</h2>
-          <p className="text-gray-600 mt-3">
-            AI-curated travel plans designed for comfort, budget & experience
+          <h2 className="font-inter text-4xl font-bold text-[#0A1A44]">Your Next Adventure Awaits</h2>
+          <p className="text-gray-600 mt-3 text-lg font-inter">
+            Curated journeys Crafted for comfort, budget, and unforgettable experiences
           </p>
         </div>
 
