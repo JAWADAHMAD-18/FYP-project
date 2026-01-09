@@ -7,8 +7,8 @@ function LandingPage() {
   return (
     <>
       <Hero />
-      <TrustedBy />
       <PackagesSection />
+      <TrustedBy />
       <Services />
     </>
   );
