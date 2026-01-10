@@ -54,7 +54,7 @@ const StorySection = () => {
   ];
 
   return (
-    <div ref={triggerRef} className="overflow-hidden">
+    <div ref={triggerRef} className="overflow-hidden py-20">
       <div ref={sectionRef} className="flex flex-nowrap h-screen w-[300vw]">
         {stories.map((story, index) => (
           <div

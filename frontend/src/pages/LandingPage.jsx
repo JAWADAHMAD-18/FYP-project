@@ -4,6 +4,7 @@ import PackagesSection from "../sections/landingPage/Packages";
 import TrustedBy from "../sections/landingPage/TrustedBy";
 import Testimonials from "../sections/landingPage/Testimonials";
 import StorySection from "../sections/landingPage/Stories";
+import BlogSection from "../sections/landingPage/BlogSection";
 function LandingPage() {
   return (
     <>
@@ -13,6 +14,7 @@ function LandingPage() {
       <Services />
       <Testimonials />
       <StorySection />
+      <BlogSection/>
     </>
   );
 }
