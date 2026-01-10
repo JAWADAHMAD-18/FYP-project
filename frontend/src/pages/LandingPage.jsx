@@ -3,6 +3,7 @@ import Services from "../sections/landingPage/Services";
 import PackagesSection from "../sections/landingPage/Packages";
 import TrustedBy from "../sections/landingPage/TrustedBy";
 import Testimonials from "../sections/landingPage/Testimonials";
+import StorySection from "../sections/landingPage/Stories";
 function LandingPage() {
   return (
     <>
@@ -11,6 +12,7 @@ function LandingPage() {
       <TrustedBy />
       <Services />
       <Testimonials />
+      <StorySection />
     </>
   );
 }

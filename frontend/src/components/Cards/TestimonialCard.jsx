@@ -10,7 +10,7 @@ const TestimonialCard = ({
 }) => {
   return (
     <div
-      className={`testimonial-card bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4 hover:shadow-xl transition-shadow duration-300 ${className}`}
+      className={`testimonial-card bg-white p-6 rounded-2xl shadow-sm border border-gray-300 flex flex-col gap-4 hover:shadow-xl transition-shadow duration-300 ${className}`}
     >
       <div className="flex gap-1">
         {[...Array(rating)].map((_, i) => (

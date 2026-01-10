@@ -1,5 +1,4 @@
 import mongoose, { Schema } from "mongoose";
-//TODO add feature and higlights for more info in  a single 
 const packageSchema = new Schema(
   {
     title: {
@@ -11,6 +10,10 @@ const packageSchema = new Schema(
       required: true,
     },
     description: {
+      type: String,
+      required: true,
+    },
+    highlights: {
       type: String,
       required: true,
     },
