@@ -15,7 +15,7 @@ const TrustedBy = () => {
     <section className="py-10 bg-white overflow-hidden">
       {/* Section Heading */}
       <div className="container mx-auto px-4 mb-8 text-center">
-        <h2 className="text-md font-semibold tracking-widest text-[#0A1A44] uppercase">
+        <h2 className=" font-inter text-lg font-bold tracking-widest text-[#0A1A44] uppercase">
           Trusted by the World's Leading Travel Brands
         </h2>
       </div>

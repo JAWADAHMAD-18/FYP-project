@@ -84,7 +84,7 @@ export default function Hero() {
 
             <AirplaneModel scale={2.5} position={[0, -0.6, 0]} />
 
-            <Environment preset="sunset" />
+            {/* <Environment preset="city" /> */} //TODO: Add environment preset
             <OrbitControls
               enableZoom={false}
               enablePan={false}

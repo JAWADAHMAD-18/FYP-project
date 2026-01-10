@@ -30,7 +30,7 @@ const PackagesSection = () => {
   }, []);
 
   return (
-    <section className="bg-[#F8FAFF] py-10">
+    <section className="bg-white py-10">
       <div className="max-w-7xl mx-auto px-6">
         {/* Heading */}
         <div className="text-center mb-14">
