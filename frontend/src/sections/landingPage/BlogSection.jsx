@@ -1,92 +1,96 @@
-import React, { useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
-
-gsap.registerPlugin(ScrollTrigger);
+import React from "react";
+import { motion } from "framer-motion";
 
 const BlogSection = () => {
-  const containerRef = useRef();
-
   const posts = [
     {
-      title: "5 Hidden Gems You Must Visit in Northern Pakistan",
-      category: "Destination",
+      title: "Chasing Sunsets: The Most Photogenic Spots in Cappadocia",
+      category: "Photography",
       date: "Jan 10, 2026",
       readTime: "6 min read",
       image:
-        "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&w=600&q=80",
+        "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80",
     },
     {
-      title: "How to Pack Light for Your Next International Trip",
-      category: "Tips",
+      title: "Solitude in the Sky: A Hiker's Guide to the Karakoram",
+      category: "Adventure",
+      date: "Jan 08, 2026",
+      readTime: "10 min read",
+      image:
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      title: "Beyond Sushi: Discovering Tokyo’s Hidden Ramen Alleys",
+      category: "Culinary",
       date: "Jan 05, 2026",
-      readTime: "4 min read",
+      readTime: "5 min read",
       image:
-        "https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      title: "Traditional Flavors: A Guide to Local Food in Turkey",
-      category: "Food",
-      date: "Dec 28, 2025",
-      readTime: "8 min read",
-      image:
-        "https://images.unsplash.com/photo-1532339142463-fd0a89b22415?auto=format&fit=crop&w=600&q=80",
+        "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80",
     },
   ];
 
-  useGSAP(
-    () => {
-      gsap.from(".blog-card", {
-        opacity: 0,
-        y: 50,
-        stagger: 0.2,
-        duration: 1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 80%",
-        },
-      });
+  // Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
     },
-    { scope: containerRef }
-  );
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.8, ease: "easeOut" },
+    },
+  };
 
   return (
-    <section ref={containerRef} className="py-24 bg-[#f4f6fb]">
+    <section className="py-24 bg-[#f8fafc] overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div className="max-w-xl">
             <h2 className="text-4xl md:text-5xl font-extrabold text-[#0A1A44] mb-4 tracking-tight">
-              Travel Stories & Advice
+              Inspiring Your Next Journey
             </h2>
-            <p className="text-gray-500">
-              Get expert tips and inspiration from our travel writers to plan
-              your next great adventure.
+            <p className="text-gray-500 text-lg">
+              Stories, tips, and guides from our global network of explorers to
+              help you navigate the world with ease.
             </p>
           </div>
-          <button className="bg-white text-[#0A1A44] px-8 py-3 rounded-full font-bold shadow-sm hover:shadow-md transition-all border border-gray-100">
+          <button className="bg-white text-[#0A1A44] px-8 py-3 rounded-full font-bold shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
             View All Stories
           </button>
         </div>
 
-        {/* Blog Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Blog Grid using Framer Motion */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-10"
+        >
           {posts.map((post, index) => (
-            <div
+            <motion.div
               key={index}
-              className="blog-card group cursor-pointer bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+              variants={cardVariants}
+              className="group cursor-pointer bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500"
             >
               {/* Image Container */}
-              <div className="h-64 overflow-hidden relative">
+              <div className="h-72 overflow-hidden relative">
                 <img
                   src={post.image}
                   alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute top-4 left-4">
-                  <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                <div className="absolute top-6 left-6">
+                  <span className="bg-white/90 backdrop-blur-sm text-[#0A1A44] text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.15em]">
                     {post.category}
                   </span>
                 </div>
@@ -94,24 +98,29 @@ const BlogSection = () => {
 
               {/* Text Content */}
               <div className="p-8">
-                <div className="flex items-center gap-4 text-xs text-gray-400 mb-4 font-medium uppercase tracking-widest">
+                <div className="flex items-center gap-3 text-[11px] text-gray-400 mb-4 font-bold uppercase tracking-widest">
                   <span>{post.date}</span>
-                  <span className="h-1 w-1 bg-gray-300 rounded-full"></span>
+                  <span className="h-1.5 w-1.5 bg-blue-500 rounded-full"></span>
                   <span>{post.readTime}</span>
                 </div>
-                <h3 className="text-xl font-bold text-[#0A1A44] leading-snug group-hover:text-blue-600 transition-colors">
+                <h3 className="text-2xl font-bold text-[#0A1A44] leading-tight group-hover:text-blue-600 transition-colors duration-300">
                   {post.title}
                 </h3>
-                <div className="mt-6 flex items-center gap-2 text-blue-600 font-bold text-sm">
-                  Read More{" "}
-                  <span className="text-lg transition-transform group-hover:translate-x-1">
+
+                <div className="mt-8 flex items-center gap-2 text-blue-600 font-extrabold text-sm group/btn">
+                  <span>Read Article</span>
+                  <motion.span
+                    className="text-xl"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: 5 }}
+                  >
                     →
-                  </span>
+                  </motion.span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

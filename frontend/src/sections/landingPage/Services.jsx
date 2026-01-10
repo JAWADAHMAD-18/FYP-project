@@ -1,13 +1,6 @@
-import React, { useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
-
-gsap.registerPlugin(ScrollTrigger);
+import { motion } from "framer-motion";
 
 const Services = () => {
-  const containerRef = useRef();
-
   const serviceData = [
     {
       title: "Travel Made Easy — Pick & Go",
@@ -48,29 +41,27 @@ const Services = () => {
     },
   ];
 
-  useGSAP(
-    () => {
-      gsap.fromTo(
-        ".service-card",
-        { y: 50, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: containerRef.current,
-            start: "top 80%",
-          },
-        }
-      );
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15, // This replaces GSAP stagger
+      },
     },
-    { scope: containerRef }
-  );
+  };
+
+  const cardVariants = {
+    hidden: { y: 50, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.8, ease: "easeOut" },
+    },
+  };
 
   return (
-    <section ref={containerRef} className="py-10 bg-white overflow-hidden">
+    <section className="py-10 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         {/* Section Heading */}
         <div className="text-center mb-12">
@@ -84,11 +75,18 @@ const Services = () => {
         </div>
 
         {/* Dynamic Bento Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-6">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }} // amount: 0.2 means trigger when 20% visible
+          className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-6 gap-6"
+        >
           {serviceData.map((service, index) => (
-            <div
+            <motion.div
               key={index}
-              className={`service-card group p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${service.variant} ${service.gridClass}`}
+              variants={cardVariants}
+              className={`group p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${service.variant} ${service.gridClass}`}
             >
               <div>
                 <div className="text-4xl mb-6 group-hover:scale-110 transition-transform duration-300">
@@ -97,7 +95,7 @@ const Services = () => {
                 <h3 className="text-xl font-bold mb-3 leading-tight">
                   {service.title}
                 </h3>
-                <p className={`text-sm opacity-80 leading-relaxed`}>
+                <p className="text-sm opacity-80 leading-relaxed">
                   {service.description}
                 </p>
               </div>
@@ -107,9 +105,9 @@ const Services = () => {
                   Learn More <span className="text-lg">→</span>
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
