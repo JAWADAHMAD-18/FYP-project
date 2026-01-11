@@ -46,7 +46,7 @@ const Services = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15, // This replaces GSAP stagger
+        staggerChildren: 0.15, 
       },
     },
   };

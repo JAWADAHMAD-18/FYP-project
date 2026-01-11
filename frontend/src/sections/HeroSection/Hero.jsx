@@ -76,7 +76,7 @@ export default function Hero() {
       </div>
 
       {/* 3D MODEL SECTION */}
-      <div className="absolute right-0 bottom-0 w-[500px] h-[500px] z-[10] pointer-events-none select-none">
+      {/* <div className="absolute right-0 bottom-0 w-[500px] h-[500px] z-[10] pointer-events-none select-none">
         <Canvas camera={{ position: [5, 2, 5], fov: 45 }}>
           <Suspense fallback={null}>
             <ambientLight intensity={0.6} />
@@ -84,7 +84,7 @@ export default function Hero() {
 
             <AirplaneModel scale={2.5} position={[0, -0.6, 0]} />
 
-            {/* <Environment preset="city" /> */} //TODO: Add environment preset
+            <Environment preset="city" /> //TODO: Add environment preset
             <OrbitControls
               enableZoom={false}
               enablePan={false}
@@ -92,7 +92,7 @@ export default function Hero() {
             />
           </Suspense>
         </Canvas>
-      </div>
+      </div> */}
     </section>
   );
 }

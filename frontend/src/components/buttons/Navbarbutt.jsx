@@ -7,7 +7,7 @@ export default function Btn({ children, to, className = "", ...props }) {
     return (
       <Link
         to={to}
-        className={`inline-block text-[#0A1A44] hover:text-[#2563EB] transition ${className}`}
+        className={`inline-block text-[#0A1A44] hover:text-blue-600 transition ${className}`}
         {...props}
       >
         {children}
@@ -17,7 +17,7 @@ export default function Btn({ children, to, className = "", ...props }) {
 
   return (
     <button
-      className={`inline-block text-[#0A1A44] hover:text-[#2563EB] transition ${className}`}
+      className={`inline-block text-[#0A1A44] hover:text-blue-600 transition ${className}`}
       {...props}
     >
       {children}

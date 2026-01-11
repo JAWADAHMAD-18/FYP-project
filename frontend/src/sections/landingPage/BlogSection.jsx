@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-
+//TODo:u can also check here color which is blue-600
 const BlogSection = () => {
   const posts = [
     {
@@ -95,14 +95,14 @@ const BlogSection = () => {
                   </span>
                 </div>
               </div>
-
+               {/* TODo:u can also check here color which is teal-500 */}
               {/* Text Content */}
               <div className="p-8">
                 <div className="flex items-center gap-3 text-[11px] text-gray-400 mb-4 font-bold uppercase tracking-widest">
                   <span>{post.date}</span>
-                  <span className="h-1.5 w-1.5 bg-blue-500 rounded-full"></span>
+                  <span className="h-1.5 w-1.5 bg-teal-400 rounded-full"></span>
                   <span>{post.readTime}</span>
-                </div>
+                </div>   
                 <h3 className="text-2xl font-bold text-[#0A1A44] leading-tight group-hover:text-blue-600 transition-colors duration-300">
                   {post.title}
                 </h3>

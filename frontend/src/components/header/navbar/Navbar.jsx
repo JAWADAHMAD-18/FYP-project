@@ -1,40 +1,35 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../../../context/useAuth.js";
 import Btn from "../../buttons/Navbarbutt.jsx";
-import gsap from "gsap";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
-  const mobileMenuRef = useRef(null);
-  const navRef = useRef(null);
-
-  // Animate title on page load
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      if (navRef.current && navRef.current.querySelector(".title")) {
-        gsap.from(".title", { y: -30, opacity: 0, duration: 0.6 });
-      }
-    }, navRef);
-    return () => ctx.revert();
-  }, []);
 
   return (
     <div className="fixed top-0 left-0 w-full h-20 z-20 bg-white/40 backdrop-blur-md shadow-sm">
-      <nav
-        ref={navRef}
-        className="flex justify-between items-center px-6 md:px-12 h-full"
-      >
+      <nav className="flex justify-between items-center px-6 md:px-12 h-full">
         {/* BRAND */}
-        <h1 className="title text-3xl font-bold tracking-wide text-[#0A1A44]">
+        <h1
+          data-aos="fade-down"
+          data-aos-duration="600"
+          className="text-3xl font-bold tracking-wide text-[#0A1A44]"
+        >
           TripFusion
         </h1>
 
+        {/* CENTER MENU (Desktop) */}
         {user && (
-          <div className="center-menu hidden md:flex gap-8 text-lg font-medium">
-            <Btn className="btn">Home</Btn>
-            <Btn className="btn">About</Btn>
-            <Btn className="btn">Contact</Btn>
+          <div className="hidden md:flex gap-8 text-lg font-medium">
+            <Btn data-aos="fade-down" data-aos-duration="600" data-aos-easing="linear">
+              Home
+            </Btn>
+            <Btn data-aos="fade-down" data-aos-duration="700" data-aos-easing="linear">
+              About
+            </Btn>
+            <Btn data-aos="fade-down" data-aos-duration="800" data-aos-easing="linear">
+              Contact
+            </Btn>
           </div>
         )}
 
@@ -42,11 +37,11 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           {/* Guest */}
           {!user && (
-            <div className="right-menu flex items-center gap-6 ml-auto text-lg font-medium">
-              <Btn className="btn" to="/signup">
+            <div className="flex items-center gap-6 ml-auto text-lg font-medium">
+              <Btn to="/signup" data-aos="fade-down" data-aos-duration="600" data-aos-easing="linear">
                 SignUp
               </Btn>
-              <Btn className="btn" to="/login">
+              <Btn to="/login" data-aos="fade-down" data-aos-duration="700" data-aos-easing="linear">
                 Login
               </Btn>
             </div>
@@ -56,13 +51,16 @@ export default function Navbar() {
           {user && (
             <>
               <button
+                data-aos="fade-down"
+                data-aos-duration="800"
+                data-aos-easing="linear"
                 onClick={logout}
-                className="right-logout-btn hidden md:block text-[#0A1A44] hover:text-red-500 text-lg font-medium"
+                className="hidden md:block text-[#0A1A44] hover:text-red-500 text-lg font-medium"
               >
                 Logout
               </button>
 
-              {/* Hamburger for mobile */}
+              {/* Hamburger */}
               <button
                 onClick={() => setOpen(!open)}
                 className="md:hidden text-3xl text-[#0A1A44]"
@@ -76,14 +74,19 @@ export default function Navbar() {
         {/* MOBILE SLIDE MENU */}
         {user && (
           <div
-            ref={mobileMenuRef}
-            className={`mobile-menu fixed top-0 right-0 h-full bg-white shadow-xl w-[40%] 
+            className={`fixed top-0 right-0 h-full bg-white shadow-xl w-[40%]
             transform transition-transform duration-300 pt-24 px-6 flex flex-col gap-6 text-lg font-medium
             ${open ? "translate-x-0" : "translate-x-full"}`}
           >
-            <Btn className="btn">Home</Btn>
-            <Btn className="btn">About</Btn>
-            <Btn className="btn">Contact</Btn>
+            <Btn data-aos="fade-right" data-aos-duration="500" data-aos-easing="linear">
+              Home
+            </Btn>
+            <Btn data-aos="fade-right" data-aos-duration="600" data-aos-easing="linear">
+              About
+            </Btn>
+            <Btn data-aos="fade-right" data-aos-duration="700" data-aos-easing="linear">
+              Contact
+            </Btn>
 
             <button
               onClick={logout}
