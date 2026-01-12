@@ -5,77 +5,55 @@ import api, { setAccessToken as setApiToken } from "../api/Api";
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // ---- sync token with axios interceptor ----
+  // 🔹 Sync access token with axios
   useEffect(() => {
     setApiToken(accessToken);
   }, [accessToken]);
 
-  // ---- get logged-in user ----
-  const fetchUser = async () => {
+  // 🔹 Fetch current user using valid access token
+  const fetchUser = async (token) => {
     try {
-      const res = await api.get("/user/me");
-      return res.data?.data?.user || res.data?.user || null;
+      console.log("Access token before /me call:", token);
+
+      const res = await api.get("/user/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("User data:", res.data?.message?.user);
+      return res.data?.message?.user || null;
     } catch (err) {
-      console.log("AuthContext: fetchUser error", err);
       return null;
     }
   };
 
-  // ---- central auth applier (IMPORTANT) ----
+  // 🔹 Apply auth after successful login / refresh
   const applyAuth = async (token) => {
+    console.log("Apply auth:", token);
+    if (!token) return;
     setAccessToken(token);
-    const userData = await fetchUser();
+    setApiToken(token);
+    const userData = await fetchUser(token); // pass token here!
     setUser(userData);
   };
 
-  // ---- auto login on refresh ----
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const res = await api.post("/user/refresh-token");
-        const newToken = res.data?.accessToken;
-
-        if (!mounted) return;
-
-        if (newToken) {
-          await applyAuth(newToken);
-        }
-      } catch (err) {
-        console.log("AuthContext: refresh-token failed", err);
-        setAccessToken(null);
-        setUser(null);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // ---- login ----
+  // 🔹 LOGIN
   const login = async (credentials) => {
     const res = await api.post("/user/login", credentials);
-
     const token = res.data?.data?.accessToken;
-    if (!token) {
-      throw new Error("Access token missing in response");
-    }
+    if (!token) throw new Error("Access token missing in response");
 
-    await applyAuth(token);
+    await applyAuth(token); // centralized
   };
 
-  // ---- logout ----
+  // 🔹 LOGOUT
   const logout = async () => {
     try {
       await api.post("/user/logout");
     } catch (err) {
-      console.log("AuthContext: logout error", err);
+      console.log("AuthProvider: logout error", err);
     }
 
     setAccessToken(null);
@@ -85,7 +63,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem("app_logout", Date.now());
   };
 
-  // ---- cross-tab logout sync ----
+  // 🔹 Cross-tab logout sync
   useEffect(() => {
     const syncLogout = (e) => {
       if (e.key === "app_logout") {
@@ -106,6 +84,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         logout,
+        isAuthenticated: !!user,
       }}
     >
       {children}

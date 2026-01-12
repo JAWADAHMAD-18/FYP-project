@@ -9,8 +9,8 @@ export const generateAccessandRefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
     if (!user) throw new ApiError(404, "User not found");
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    const accessToken =await  user.generateAccessToken();
+    const refreshToken =await user.generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
@@ -92,6 +92,8 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   // Try cookie first, then body
+  console.log("Refresh token from cookie:", req.cookies.refreshToken);
+
   const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
   if (!refreshToken) throw new ApiError(401, "No refresh token provided");
   let decoded;

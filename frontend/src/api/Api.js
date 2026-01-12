@@ -51,8 +51,8 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await api.post("/user/refresh-token");
-        const newToken = data?.accessToken;
+        const { data } = await api.post("/user/refresh-token",{}, { withCredentials: true });
+        const newToken = data?.data?.accessToken;
 
         if (!newToken) throw new Error("No access token returned");
 

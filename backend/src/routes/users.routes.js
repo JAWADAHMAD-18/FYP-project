@@ -12,6 +12,6 @@ router.route("/refresh-token").post(refreshAccessToken);
 
 // Protected routes (auth required - req.user populated by verifyAuth)
 router.route("/logout").post(verifyAuth, logoutUser);
-router.route("/me").get( getCurrentUser);// Todo:add the middleware to check if the user is logged in
+router.route("/me").get( verifyAuth,getCurrentUser);
 
 export default router;

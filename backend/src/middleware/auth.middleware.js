@@ -4,8 +4,8 @@ import User from "../models/users.models.js";
 import jwt from "jsonwebtoken";
 
 const verifyAuth = asyncHandler(async (req, res, next) => {
-  // 1️⃣ Grab token ONLY from Authorization header
   const authHeader = req.headers.authorization;
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     throw new ApiError(401, "You are not logged in");
   }
@@ -20,7 +20,7 @@ const verifyAuth = asyncHandler(async (req, res, next) => {
   }
 
   // 2️⃣ Use correct decoded field
-  const user = await User.findById(decoded._id).select(
+  const user = await User.findById(decoded.id).select(
     "-password -refreshToken"
   );
   if (!user) throw new ApiError(401, "User not authorized");
