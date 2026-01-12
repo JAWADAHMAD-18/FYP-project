@@ -1,52 +1,51 @@
-import {  useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
-import api from "../api/Api.js";
-
+import api, { setAccessToken as setApiToken } from "../api/Api";
 
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sync token to global window for interceptor
+  // ---- sync token with axios interceptor ----
   useEffect(() => {
-    window.__ACCESS_TOKEN__ = accessToken;
+    setApiToken(accessToken);
   }, [accessToken]);
 
-  // --- Reusable function to fetch user profile ---
-  const fetchUser = async (token) => {
+  // ---- get logged-in user ----
+  const fetchUser = async () => {
     try {
-      const res = await api.get("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data?.data?.user || null;
+      const res = await api.get("/user/me");
+      return res.data?.data?.user || res.data?.user || null;
     } catch (err) {
-      console.log("Error from auth context during getting user ", err);
+      console.log("AuthContext: fetchUser error", err);
       return null;
     }
   };
 
-  // --- Auto login on page refresh ---
+  // ---- central auth applier (IMPORTANT) ----
+  const applyAuth = async (token) => {
+    setAccessToken(token);
+    const userData = await fetchUser();
+    setUser(userData);
+  };
+
+  // ---- auto login on refresh ----
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
-        const res = await api.post("/users/refresh-token");
+        const res = await api.post("/user/refresh-token");
+        const newToken = res.data?.accessToken;
+
         if (!mounted) return;
 
-        const newToken = res.data?.accessToken;
         if (newToken) {
-          setAccessToken(newToken);
-
-          const userData = await fetchUser(newToken);
-          setUser(userData);
+          await applyAuth(newToken);
         }
       } catch (err) {
-        console.log(
-          "Error from auth context useEffect during refresh token  ",
-          err
-        );
-
+        console.log("AuthContext: refresh-token failed", err);
         setAccessToken(null);
         setUser(null);
       } finally {
@@ -59,35 +58,57 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // --- Login ---
+  // ---- login ----
   const login = async (credentials) => {
-    const res = await api.post("/users/login", credentials);
-    const token = res.data?.accessToken;
-    if (!token) return;
+    const res = await api.post("/user/login", credentials);
 
-    setAccessToken(token);
-    const userData = await fetchUser(token);
-    setUser(userData);
+    const token = res.data?.data?.accessToken;
+    if (!token) {
+      throw new Error("Access token missing in response");
+    }
+
+    await applyAuth(token);
   };
 
-  // --- Logout ---
+  // ---- logout ----
   const logout = async () => {
     try {
-      await api.post("/users/logout");
+      await api.post("/user/logout");
     } catch (err) {
-      console.log("Error during logout user in authcontext", err);
+      console.log("AuthContext: logout error", err);
     }
 
     setAccessToken(null);
     setUser(null);
 
+    // sync logout across tabs
     localStorage.setItem("app_logout", Date.now());
   };
 
+  // ---- cross-tab logout sync ----
+  useEffect(() => {
+    const syncLogout = (e) => {
+      if (e.key === "app_logout") {
+        setAccessToken(null);
+        setUser(null);
+      }
+    };
+
+    window.addEventListener("storage", syncLogout);
+    return () => window.removeEventListener("storage", syncLogout);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ accessToken, user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        accessToken,
+        user,
+        loading,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
-

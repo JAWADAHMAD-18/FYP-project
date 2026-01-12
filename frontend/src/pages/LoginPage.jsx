@@ -1,16 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Plane, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import InputField from "../components/inputs/SignupInputs.jsx";
-import API from "../api/Api.js";
+import { useAuth } from "../context/useAuth.js";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, user, loading } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -18,38 +28,29 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
     if (!form.email || !form.password) {
-      alert("Please fill all required fields!");
+      setError("Please fill all required fields.");
       return;
     }
 
     try {
-      const payload = {
+      setSubmitting(true);
+
+      await login({
         email: form.email.trim(),
-
         password: form.password,
-      };
-
-      const response = await API.post("/user/login", payload);
-
-      // console.log("Login successful:", response.data);
-
-      alert("Login successful!");
-
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
-
-      alert(
-        error.response?.data?.message ||
-          "Something went wrong. Please try again later."
-      );
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid email or password");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div className="h-screen w-full flex items-center justify-center bg-[#f0f4f8] p-4 overflow-hidden">
-      {/* Main Container - Shared look with Signup */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -64,7 +65,8 @@ const Login = () => {
           <ArrowLeft className="w-5 h-5" />
           <span className="hidden sm:inline">Back to Home</span>
         </motion.button>
-        {/* Left Side: The Visual Hook */}
+
+        {/* Left Visual */}
         <motion.div
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -81,13 +83,12 @@ const Login = () => {
               Welcome <br /> Back, Traveler.
             </h2>
             <p className="mt-4 text-blue-100/80 text-sm max-w-xs">
-              Your next destination is just a login away. Ready to pick up where
-              you left off?
+              Your next destination is just a login away.
             </p>
           </div>
         </motion.div>
 
-        {/* Right Side: The Form */}
+        {/* Right Form */}
         <motion.div
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -95,15 +96,19 @@ const Login = () => {
           className="w-full md:w-1/2 p-8 lg:p-16 flex flex-col justify-center"
         >
           <div className="mb-10">
-            <h1 className="text-3xl font-black text-[#0A1A44] tracking-tight">
-              Login
-            </h1>
+            <h1 className="text-3xl font-black text-[#0A1A44]">Login</h1>
             <p className="text-gray-400 text-sm mt-2 font-medium uppercase tracking-widest">
               Continue your adventure
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <p className="text-red-500 text-sm font-medium text-center">
+                {error}
+              </p>
+            )}
+
             <InputField
               label="Email Address"
               name="email"
@@ -115,35 +120,26 @@ const Login = () => {
               type="email"
             />
 
-            <div className="space-y-1">
-              <InputField
-                label="Password"
-                name="password"
-                icon={Lock}
-                placeholder="Enter password"
-                value={form.password}
-                onChange={handleChange}
-                required
-                isPassword
-              />
-              <div className="text-right">
-                <a
-                  href="#"
-                  className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
-                >
-                  Forgot Password?
-                </a>
-              </div>
-            </div>
+            <InputField
+              label="Password"
+              name="password"
+              icon={Lock}
+              placeholder="Enter password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              isPassword
+            />
 
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               type="submit"
-              className="w-full bg-[#0A1A44] hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl"
+              disabled={submitting}
+              className="w-full bg-[#0A1A44] hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl disabled:opacity-60"
             >
               <Plane className="w-5 h-5" />
-              Sign In
+              {submitting ? "Signing in..." : "Sign In"}
             </motion.button>
           </form>
 

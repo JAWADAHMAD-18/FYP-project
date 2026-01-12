@@ -27,7 +27,6 @@ const Testimonials = () => {
     },
   ];
 
-  // 1. Container Variants (Handles the "Stagger" orchestrations)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -38,7 +37,6 @@ const Testimonials = () => {
     },
   };
 
-  // 2. Card Variants (Matches the GSAP "back.out" feel)
   const cardVariants = {
     hidden: {
       opacity: 0,
@@ -57,7 +55,7 @@ const Testimonials = () => {
   };
 
   return (
-    <section className="py-16 bg-white overflow-hidden">
+    <section className="py-10 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">

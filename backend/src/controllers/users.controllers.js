@@ -68,31 +68,28 @@ export const loginUser = asyncHandler(async (req, res) => {
   );
   const loggedUser = await User.findOne({ email }).select("-password");
   if (!loggedUser) throw new ApiError(500, "Failed to login user");
-  // Set refresh token as httpOnly cookie for better security. Access token
-  // can be returned in the response body for the client to use in headers.
+
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     // Convert days to milliseconds (7d = 7 * 24 * 60 * 60 * 1000)
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
   return res.status(200).json(
-    new ApiResponse(200, "User logged in successfully", {
-      user: loggedUser,
-      accessToken,
-    })
+    new ApiResponse(
+      200,
+      {
+        user: loggedUser,
+        accessToken,
+      },
+      "User logged in successfully"
+    )
   );
 });
 
-/**
- * Refresh Access Token
- *
- * @route POST /api/v1/users/refresh-token
- * @returns {Object} { accessToken } - New access token for client to use in Authorization header
- */
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   // Try cookie first, then body
   const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
@@ -103,40 +100,28 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   } catch (error) {
     throw new ApiError(401, "Invalid refresh token");
   }
-  const user = await User.findById(decoded.id);
+  const user = await User.findById(decoded._id); //here i canged id to _id
   if (!user) throw new ApiError(404, "User not found");
-  // Ensure the provided refresh token matches what's stored (simple rotation/validation)
   if (!user.refreshToken || user.refreshToken !== refreshToken) {
     throw new ApiError(401, "Refresh token revoked or does not match");
   }
-  // Generate a new access token (do not rotate refresh token here, but you can)
   const accessToken = await user.generateAccessToken();
 
-  // Secure cookie options: httpOnly prevents XSS, secure requires HTTPS in production, sameSite prevents CSRF
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, "Access token refreshed successfully", {
-        accessToken,
-      })
-    );
+  return res.status(200).json(
+    new ApiResponse(200, "Access token refreshed successfully", {
+      accessToken,
+    })
+  );
 });
-/**
- * Logout User
- 
- * 
- * @route POST /api/v1/users/logout
- * @middleware verifyAuth - Requires logged-in user
- * @returns {Object} Success message
- */
+
 export const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -161,13 +146,6 @@ export const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "User logged out successfully"));
 });
 
-/**
- 
- * 
- * @route GET /api/v1/users/me
- * @middleware verifyAuth - Requires logged-in user
- * @returns {Object} { user: { _id, name, email, phone, profilePic, role, createdAt } }
- */
 export const getCurrentUser = asyncHandler(async (req, res) => {
   // req.user is populated by verifyAuth middleware
   if (!req.user) {
