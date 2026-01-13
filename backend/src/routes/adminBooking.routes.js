@@ -7,7 +7,7 @@ import {
   rejectPayment,
   cancelBookingByAdmin,
   searchBookings,
-} from "../controllers/admin.booking.controllers.js";
+} from "../controllers/adminBooking.controllers.js";
 
 const router = Router();
 

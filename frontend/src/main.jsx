@@ -14,24 +14,26 @@ import Dashboard from "./pages/Dashboard.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <App />, // App contains Navbar + Footer
     children: [
       {
         index: true,
         element: <LandingPage />,
       },
-    ],
-  },
-  {
-    element: <ProtectedRoute />,
-    children: [
       {
-        path: "/dashboard",
-        element: <Dashboard />,
+        path: "dashboard",
+        element: <ProtectedRoute />, 
+        children: [
+          {
+            index: true,
+            element: <Dashboard />,
+          },
+        ],
       },
+      // You can add more protected routes here
     ],
   },
-
+  // Routes outside App layout → no navbar/footer
   {
     path: "/signup",
     element: <Signup />,
