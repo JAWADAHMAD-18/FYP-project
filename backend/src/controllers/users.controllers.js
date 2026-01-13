@@ -118,9 +118,9 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
   return res.status(200).json(
-    new ApiResponse(200, "Access token refreshed successfully", {
+    new ApiResponse(200, {
       accessToken,
-    })
+    }, "Access token refreshed successfully")
   );
 });
 

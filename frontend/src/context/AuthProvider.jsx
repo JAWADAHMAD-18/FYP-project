@@ -1,74 +1,111 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AuthContext } from "./AuthContext";
 import api, { setAccessToken as setApiToken } from "../api/Api";
 
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem("accessToken") || null
+  );
+  const [loading, setLoading] = useState(true);
 
-  // 🔹 Sync access token with axios
+  // Sync token with Axios
   useEffect(() => {
     setApiToken(accessToken);
   }, [accessToken]);
 
-  // 🔹 Fetch current user using valid access token
-  const fetchUser = async (token) => {
+  // Fetch user
+  const fetchUser = useCallback(async (token) => {
     try {
-      console.log("Access token before /me call:", token);
-
       const res = await api.get("/user/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("User data:", res.data?.message?.user);
+      console.log("User data received:", res.data?.message?.user);
       return res.data?.message?.user || null;
     } catch (err) {
+      console.error("Error fetching user:", err);
       return null;
     }
-  };
+  }, []);
 
-  // 🔹 Apply auth after successful login / refresh
-  const applyAuth = async (token) => {
-    console.log("Apply auth:", token);
-    if (!token) return;
-    setAccessToken(token);
-    setApiToken(token);
-    const userData = await fetchUser(token); // pass token here!
-    setUser(userData);
-  };
+  // Apply auth after login / restore
+  const applyAuth = useCallback(
+    async (token) => {
+      if (!token) return;
 
-  // 🔹 LOGIN
+
+      setAccessToken(token);
+      localStorage.setItem("accessToken", token);
+      setApiToken(token);
+
+      const userData = await fetchUser(token);
+      if (userData) setUser(userData);
+      else {
+        console.warn("User fetch failed after applying token");
+        setAccessToken(null);
+        setUser(null);
+        localStorage.removeItem("accessToken");
+      }
+    },
+    [fetchUser]
+  );
+
+  // Restore auth on page reload
+  useEffect(() => {
+    const restoreAuth = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      await applyAuth(token);
+      setLoading(false);
+    };
+
+    restoreAuth();
+  }, [applyAuth]);
+
+  // Login
   const login = async (credentials) => {
-    const res = await api.post("/user/login", credentials);
-    const token = res.data?.data?.accessToken;
-    if (!token) throw new Error("Access token missing in response");
+    try {
+      const res = await api.post("/user/login", credentials, {
+        withCredentials: true,
+      });
+      const token = res.data?.data?.accessToken;
+      if (!token) throw new Error("Access token missing in response");
 
-    await applyAuth(token); // centralized
+      await applyAuth(token);
+    } catch (err) {
+      console.error("Login failed:", err);
+      throw err;
+    }
   };
 
-  // 🔹 LOGOUT
+  // Logout
   const logout = async () => {
+    console.log("Logging out");
     try {
-      await api.post("/user/logout");
+      await api.post("/user/logout", {}, { withCredentials: true });
     } catch (err) {
-      console.log("AuthProvider: logout error", err);
+      console.error("Logout error:", err);
     }
 
-    setAccessToken(null);
     setUser(null);
+    setAccessToken(null);
+    localStorage.removeItem("accessToken");
 
     // sync logout across tabs
     localStorage.setItem("app_logout", Date.now());
   };
 
-  // 🔹 Cross-tab logout sync
+  // Cross-tab logout sync
   useEffect(() => {
     const syncLogout = (e) => {
       if (e.key === "app_logout") {
-        setAccessToken(null);
+        console.log("Logout detected from another tab");
         setUser(null);
+        setAccessToken(null);
       }
     };
 
@@ -79,8 +116,8 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
-        accessToken,
         user,
+        accessToken,
         loading,
         login,
         logout,
