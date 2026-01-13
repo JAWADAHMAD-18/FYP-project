@@ -1,5 +1,18 @@
 import mongoose from "mongoose";
 
+const PackageSnapshotSchema = new mongoose.Schema(
+  {
+    title: String,
+    destination: String,
+    durationDays: Number,
+    basePrice: Number,
+    images: [String],
+    includes: [String],
+    excludes: [String],
+  },
+  { _id: false }
+);
+
 const BookingSchema = new mongoose.Schema(
   {
     user: {
@@ -19,10 +32,13 @@ const BookingSchema = new mongoose.Schema(
       default: 1,
     },
     packageSnapshot: {
-      type: Object, // can also use a sub-schema for structure
+      type: PackageSnapshotSchema,
       required: true,
     },
-
+    currency: {
+      type: String,
+      default: "USD",
+    },
     pricePerPerson: {
       type: Number,
       required: true,
@@ -38,6 +54,10 @@ const BookingSchema = new mongoose.Schema(
     travelDate: {
       type: Date,
     },
+    bookingCode: {
+      type: String,
+      unique: true,
+    },
     bookingStatus: {
       type: String,
       enum: ["Pending", "Confirmed", "Cancelled"],
@@ -48,6 +68,30 @@ const BookingSchema = new mongoose.Schema(
       enum: ["NotPaid", "Paid", "Refunded"],
       default: "NotPaid",
     },
+    paymentProof: {
+      imageUrl: {
+        type: String,
+        default: null,
+      },
+      uploadedAt: {
+        type: Date,
+        default: null,
+      },
+      verified: {
+        type: Boolean,
+        default: false,
+      },
+      verifiedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      verifiedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+
     // fakePayment: { type: Boolean, default: true }, // because no real gateway
     cancelReason: {
       type: String,
@@ -55,6 +99,11 @@ const BookingSchema = new mongoose.Schema(
     },
     cancelledAt: {
       type: Date,
+      default: null,
+    },
+    cancelledBy: {
+      type: String,
+      enum: ["User", "Admin", null],
       default: null,
     },
     // emailSent: { type: Boolean, default: false },
@@ -68,5 +117,15 @@ const BookingSchema = new mongoose.Schema(
 
 BookingSchema.index({ user: 1, bookingDate: -1 });
 BookingSchema.index({ package: 1, bookingStatus: 1 });
+BookingSchema.index({ bookingStatus: 1, paymentStatus: 1 });
+//pre save hook
+BookingSchema.pre("save", function (next) {
+  if (!this.bookingCode) {
+    this.bookingCode = `TF-${new Date().getFullYear()}-${Math.floor(
+      100000 + Math.random() * 900000
+    )}`;
+  }
+  next();
+});
 
 export default mongoose.model("Booking", BookingSchema);
