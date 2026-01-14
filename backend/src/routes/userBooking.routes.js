@@ -8,11 +8,13 @@ import {
   getMyBookingById,
   cancelMyBooking,
 } from "../controllers/booking.controllers.js";
-
+import {getTravelSummary} from "../controllers/travelSummary.controllers.js";
 const router = Router();
 
 // Protect all routes with user authentication
 router.use(verifyAuth);
+router.route("/summary").get(getTravelSummary);
+
 
 router.route("/").post(upload.single("paymentProof"), createBooking);
 
