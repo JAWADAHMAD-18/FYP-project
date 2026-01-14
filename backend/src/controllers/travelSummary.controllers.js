@@ -13,11 +13,11 @@ export const getTravelSummary = asyncHandler(async (req, res) => {
 
   if (!bookings || bookings.length === 0) {
     return res.status(200).json(
-      new ApiResponse(200, "No bookings found", {
+      new ApiResponse(200, {
         totalSpent: 0,
         fusionSavings: 0,
         categoryBreakdown: [],
-      })
+      }, "No bookings found")
     );
   }
 

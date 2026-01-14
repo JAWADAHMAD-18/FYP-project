@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Heart, ArrowRight, Settings, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/useAuth.js";
+import TripFusionLoader from "../../components/Loader/TripFusionLoader"
 
 const UserJourney = () => {
   const { user, loading } = useAuth();
@@ -36,11 +37,7 @@ const UserJourney = () => {
 
   if (loading) {
     return (
-      <section className="px-6 md:px-12 pt-24 pb-20 bg-white">
-        <div className="max-w-7xl mx-auto text-gray-400">
-          Loading user data...
-        </div>
-      </section>
+      <TripFusionLoader/>
     );
   }
 

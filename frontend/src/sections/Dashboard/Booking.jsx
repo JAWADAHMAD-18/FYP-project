@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Plane, Map, Calendar, Plus, ExternalLink, Ticket } from "lucide-react";
 import { getMyBookings } from "../../services/booking.service.js";
+import TripFusionLoader from "../../components/Loader/TripFusionLoader.jsx";
 
 const UpcomingTrips = () => {
   const [trips, setTrips] = useState([]);
@@ -21,11 +22,7 @@ const UpcomingTrips = () => {
 
   if (loading) {
     return (
-      <section className="px-6 md:px-12 py-12 bg-white">
-        <div className="max-w-7xl mx-auto text-gray-400">
-          Loading your trips...
-        </div>
-      </section>
+      <TripFusionLoader/>
     );
   }
 

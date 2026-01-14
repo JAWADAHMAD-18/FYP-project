@@ -10,7 +10,7 @@ function Dashboard(){
         <UpcomingTrips />
         <DiscoverySection />
         <TravelInsights />
-        <Sidebar />
+        {/* <Sidebar /> */}
         </>
     )
 }

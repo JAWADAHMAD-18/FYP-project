@@ -2,7 +2,7 @@ import api from "../api/Api.js";
 
 export const getMyBookings = async () => {
   try {
-    const response = await api.get("/bookings/me");
+    const response = await api.get("/user/booking/me");
     const wrapper = response.data || {};
 
     // backend returns array in wrapper.data
