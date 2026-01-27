@@ -1,28 +1,26 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
+import { Suspense, lazy } from "react";
 
-import Hero from "../sections/HeroSection/Hero";
-import Services from "../sections/landingPage/Services";
-import PackagesSection from "../sections/landingPage/Packages";
-import TrustedBy from "../sections/landingPage/TrustedBy";
-import Testimonials from "../sections/landingPage/Testimonials";
-import StorySection from "../sections/landingPage/Stories";
-import BlogSection from "../sections/landingPage/BlogSection";
-import TripFusionLoader from "../components/Loader/TripFusionLoader.jsx"
+// Defer loading of heavy, below-the-fold sections
+const Hero = lazy(() => import("../sections/HeroSection/Hero"));
+const Services = lazy(() => import("../sections/landingPage/Services"));
+const PackagesSection = lazy(() => import("../sections/landingPage/Packages"));
+const TrustedBy = lazy(() => import("../sections/landingPage/TrustedBy"));
+const Testimonials = lazy(
+  () => import("../sections/landingPage/Testimonials")
+);
+const StorySection = lazy(() => import("../sections/landingPage/Stories"));
+const BlogSection = lazy(() => import("../sections/landingPage/BlogSection"));
 
 function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  if (loading) {
-    return (
-      <TripFusionLoader/>
-    );
-  }
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
   return (
-    <>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <Hero />
       <PackagesSection />
       <TrustedBy />
@@ -30,7 +28,7 @@ function LandingPage() {
       <Testimonials />
       <StorySection />
       <BlogSection />
-    </>
+    </Suspense>
   );
 }
 
