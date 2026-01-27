@@ -2,7 +2,7 @@ import { redisClient } from "../config/redis.config.js";
 
 // Session expiry: 2 hours (7200 seconds)
 const SESSION_EXPIRY = 7200;
-
+//TODO: redis ki etension try out karo local machine kijaggah
 // Maximum messages per session (last 4 user + 4 model)
 const MAX_MESSAGES = 8;
 
