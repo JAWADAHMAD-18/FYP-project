@@ -3,12 +3,44 @@ import Package from "../models/packages.models.js";
 import { ApiError } from "../utills/apiError.utills.js";
 import { ApiResponse } from "../utills/apiResponse.utills.js";
 
+// Explicit public-safe fields (no internal IDs beyond _id, no secrets, no admin metadata)
+const PUBLIC_PACKAGE_SELECT = [
+  "title",
+  "price",
+  "description",
+  "highlights",
+  "duration",
+  "location",
+  "city",
+  "trip_type",
+  "start_date",
+  "end_date",
+  "available",
+  "available_slot",
+  // media
+  "image", // legacy
+  "coverImage",
+  "images",
+].join(" ");
+
+const normalizeMedia = (pkg) => {
+  if (!pkg) return pkg;
+  const cover = pkg.coverImage || pkg.image || null;
+  const images = Array.isArray(pkg.images) ? pkg.images.filter(Boolean) : [];
+  return {
+    ...pkg,
+    coverImage: cover,
+    images: Array.from(new Set([cover, ...images].filter(Boolean))),
+  };
+};
 
 // Get a single package by ID
 export const getPackage = asyncHandler(async (req, res) => {
   const { packageId } = req.params;
 
-  const packageData = await Package.findById(packageId).lean();
+  const packageData = await Package.findById(packageId)
+    .select(PUBLIC_PACKAGE_SELECT)
+    .lean();
 
   if (!packageData) {
     throw new ApiError(404, "Package not found");
@@ -16,20 +48,27 @@ export const getPackage = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Package retrieved successfully", packageData));
+    .json(
+      new ApiResponse(200, normalizeMedia(packageData), "Package retrieved successfully")
+    );
 });
 
 // Get all packages (no pagination)
 export const getAllPackages = asyncHandler(async (req, res) => {
   const packages = await Package.find()
+    .select(PUBLIC_PACKAGE_SELECT)
     .sort({ createdAt: -1 }) // Newest first
     .lean();
 
   return res.status(200).json(
-    new ApiResponse(200, "Packages retrieved successfully", {
-      packages,
-      total: packages.length,
-    })
+    new ApiResponse(
+      200,
+      {
+        packages: packages.map(normalizeMedia),
+        total: packages.length,
+      },
+      "Packages retrieved successfully"
+    )
   );
 });
 
@@ -41,13 +80,18 @@ export const getActivePackages = asyncHandler(async (req, res) => {
     available: true,
     end_date: { $gt: currentDate },
   })
+    .select(PUBLIC_PACKAGE_SELECT)
     .sort({ start_date: 1 }) // Soonest first
     .lean();
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, "Active packages retrieved successfully", packages)
+      new ApiResponse(
+        200,
+        packages.map(normalizeMedia),
+        "Active packages retrieved successfully"
+      )
     );
 });
 
@@ -70,7 +114,7 @@ export const getPackagesByType = asyncHandler(async (req, res) => {
     available: true,
     end_date: { $gt: currentDate },
   })
-    .select("-imagePublicId")
+    .select(PUBLIC_PACKAGE_SELECT)
     .sort({ start_date: 1 })
     .lean();
 
@@ -79,10 +123,10 @@ export const getPackagesByType = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
+        packages.map(normalizeMedia),
         `${
           tripType.charAt(0).toUpperCase() + tripType.slice(1)
-        } packages retrieved successfully`,
-        packages
+        } packages retrieved successfully`
       )
     );
 });

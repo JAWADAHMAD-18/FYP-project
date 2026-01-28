@@ -1,10 +1,9 @@
-import api from "../api/Api.js";
+import { getPackageById } from "./package.service.js";
 
 export const getUserFavorites = async (favoriteIds = []) => {
   if (!favoriteIds.length) return [];
-  
-  const favorites = await Promise.all(
-    favoriteIds.map(id => api.get(`/packages/${id}`).then(res => res.data.package))
-  );
-  return favorites;
+
+  // Use shared caching + robust response parsing
+  const favorites = await Promise.all(favoriteIds.map((id) => getPackageById(id)));
+  return favorites.filter(Boolean);
 };

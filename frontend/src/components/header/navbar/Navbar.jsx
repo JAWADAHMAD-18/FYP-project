@@ -21,11 +21,11 @@ export default function Navbar() {
         {/* CENTER MENU (Desktop) */}
         {user && (
           <div className="hidden md:flex gap-8 text-lg font-medium">
-            <Btn data-aos="fade-down" data-aos-duration="600" data-aos-easing="linear">
+            <Btn to="/dashboard" data-aos="fade-down" data-aos-duration="600" data-aos-easing="linear">
               Home
             </Btn>
-            <Btn data-aos="fade-down" data-aos-duration="700" data-aos-easing="linear">
-              About
+            <Btn to="/packages" data-aos="fade-down" data-aos-duration="700" data-aos-easing="linear">
+              packages
             </Btn>
             <Btn data-aos="fade-down" data-aos-duration="800" data-aos-easing="linear">
               Contact

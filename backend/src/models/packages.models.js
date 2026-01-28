@@ -21,9 +21,18 @@ const packageSchema = new Schema(
       type: String,
       required: true,
     },
+    // Legacy single image used by existing UI cards
     image: {
       type: String,
       required: true,
+    },
+    // New fields (production-ready media model)
+    coverImage: {
+      type: String,
+    },
+    images: {
+      type: [String],
+      default: [],
     },
     imagePublicId: {
       type: String,
@@ -31,6 +40,10 @@ const packageSchema = new Schema(
     location: {
       type: String,
       required: true,
+    },
+    city: {
+      type: String,
+      default: "",
     },
     available: {
       type: Boolean,

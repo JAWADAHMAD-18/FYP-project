@@ -65,7 +65,7 @@ const PackagesSection = () => {
             {allPackages.length > INITIAL_LOAD && (
               <div className="flex justify-center mt-10">
                 <Link
-                //   to="/packages" //TODO future route
+                  to="/packages"
                   className="px-6 py-3 rounded-lg font-semibold text-white bg-[#0A1A44] hover:bg-[#0D9488] transition-colors duration-300"
                 >
                   Show More

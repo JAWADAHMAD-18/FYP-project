@@ -1,4 +1,5 @@
 import { MapPin, Clock, Users, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -10,6 +11,7 @@ const formatDate = (dateString) => {
 };
 
 const PackageCard = ({ packageData }) => {
+  const navigate = useNavigate();
   return (
     <div
       className="group max-w-sm transition-all duration-500 hover:-translate-y-2"
@@ -111,6 +113,9 @@ const PackageCard = ({ packageData }) => {
               className="px-6 py-3 rounded-lg font-semibold text-white transition-colors duration-300"
               style={{
                 backgroundColor: "#0A1A44",
+              }}
+              onClick={() => {
+                if (packageData?._id) navigate(`/packages/${packageData._id}`);
               }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.backgroundColor = "#0D9488")

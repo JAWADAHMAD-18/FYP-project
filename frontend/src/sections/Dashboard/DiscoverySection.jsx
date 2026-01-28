@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
 import PackageCard from "../../components/Cards/PackagesCard.jsx";
 import PackageSkeleton from "../../components/Loader/PackageSkeleton.jsx";
-import api from "../../api/Api.js";
 import { getPackages } from "../../services/package.service.js";
+import { getUserFavorites } from "../../services/getUserFavorites.js";
 
 const DiscoverySection = () => {
   const { user } = useAuth(); // ✅ Get logged-in user directly
@@ -22,12 +22,7 @@ const DiscoverySection = () => {
         // --- FETCH FAVORITES ---
         let favPackages = [];
         if (user?.favorites?.length > 0) {
-          favPackages = await Promise.all(
-            user.favorites.map(async (id) => {
-              const res = await api.get(`/packages/${id}`);
-              return res.data.package; // Make sure backend sends package under "package"
-            })
-          );
+          favPackages = await getUserFavorites(user.favorites);
         }
         setFavorites(favPackages);
 
