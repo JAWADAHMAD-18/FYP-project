@@ -13,7 +13,7 @@ const Login = lazy(() => import("./pages/LoginPage.jsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
 const PackagesPage = lazy(() => import("./pages/packages/PackagesPage.jsx"));
 const PackageDetailPage = lazy(
-  () => import("./pages/packages/PackageDetailPage.jsx")
+  () => import("./pages/packages/PackageDetailPage.jsx"),
 );
 
 const router = createBrowserRouter([
@@ -35,7 +35,7 @@ const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: <ProtectedRoute />, 
+        element: <ProtectedRoute />,
         children: [
           {
             index: true,
@@ -64,5 +64,5 @@ createRoot(document.getElementById("root")).render(
         <RouterProvider router={router} />
       </Suspense>
     </AuthProvider>
-  </StrictMode>
+  </StrictMode>,
 );
