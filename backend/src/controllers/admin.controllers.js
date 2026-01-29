@@ -1,4 +1,4 @@
-// TODO: Add CRUD operations for packages and booking
+// TODO: Add CRUD operations for packages and booking and also to REMOVE REDIS CACHE
 import asyncHandler from "../utills/asynchandler.utills.js";
 import Package from "../models/packages.models.js";
 import Booking from "../models/booking.models.js";

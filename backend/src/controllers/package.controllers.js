@@ -2,6 +2,11 @@ import asyncHandler from "../utills/asynchandler.utills.js";
 import Package from "../models/packages.models.js";
 import { ApiError } from "../utills/apiError.utills.js";
 import { ApiResponse } from "../utills/apiResponse.utills.js";
+import {
+  generateKey,
+  getCache,
+  setCache,
+} from "../utills/localRedis.utills.js";
 
 // Explicit public-safe fields (no internal IDs beyond _id, no secrets, no admin metadata)
 const PUBLIC_PACKAGE_SELECT = [
@@ -37,6 +42,21 @@ const normalizeMedia = (pkg) => {
 // Get a single package by ID
 export const getPackage = asyncHandler(async (req, res) => {
   const { packageId } = req.params;
+  const cacheKey = generateKey("package:details", packageId);
+
+  // Check cache
+  const cachedPackage = await getCache(cacheKey);
+  if (cachedPackage) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          cachedPackage,
+          "Package retrieved successfully (cache)"
+        )
+      );
+  }
 
   const packageData = await Package.findById(packageId)
     .select(PUBLIC_PACKAGE_SELECT)
@@ -46,34 +66,66 @@ export const getPackage = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Package not found");
   }
 
+  const normalized = normalizeMedia(packageData);
+
+  //  Save to cache (1 hour)
+  await setCache(cacheKey, normalized, 3600);
+
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, normalizeMedia(packageData), "Package retrieved successfully")
-    );
+    .json(new ApiResponse(200, normalized, "Package retrieved successfully"));
 });
 
 // Get all packages (no pagination)
 export const getAllPackages = asyncHandler(async (req, res) => {
+  const cacheKey = "packages:all";
+
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, cached, "Packages retrieved successfully (cache)")
+      );
+  }
+
   const packages = await Package.find()
     .select(PUBLIC_PACKAGE_SELECT)
-    .sort({ createdAt: -1 }) // Newest first
+    .sort({ createdAt: -1 })
     .lean();
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        packages: packages.map(normalizeMedia),
-        total: packages.length,
-      },
-      "Packages retrieved successfully"
-    )
-  );
+  const responseData = {
+    packages: packages.map(normalizeMedia),
+    total: packages.length,
+  };
+
+  // Cache for 15 minutes
+  await setCache(cacheKey, responseData, 900);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, responseData, "Packages retrieved successfully")
+    );
 });
 
 // Get active packages (available=true and end_date > now)
 export const getActivePackages = asyncHandler(async (req, res) => {
+  const cacheKey = "packages:active";
+
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          cached,
+          "Active packages retrieved successfully (cache)"
+        )
+      );
+  }
+
   const currentDate = new Date();
 
   const packages = await Package.find({
@@ -81,30 +133,43 @@ export const getActivePackages = asyncHandler(async (req, res) => {
     end_date: { $gt: currentDate },
   })
     .select(PUBLIC_PACKAGE_SELECT)
-    .sort({ start_date: 1 }) // Soonest first
+    .sort({ start_date: 1 })
     .lean();
+
+  const data = packages.map(normalizeMedia);
+
+  // Cache for 10 minutes
+  await setCache(cacheKey, data, 600);
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        packages.map(normalizeMedia),
-        "Active packages retrieved successfully"
-      )
-    );
+    .json(new ApiResponse(200, data, "Active packages retrieved successfully"));
 });
 
 // Get packages by trip type (domestic/international)
 export const getPackagesByType = asyncHandler(async (req, res) => {
   const { tripType } = req.params;
 
-  // Validate trip type
   if (!["domestic", "international"].includes(tripType)) {
     throw new ApiError(
       400,
       "Invalid trip type. Must be 'domestic' or 'international'"
     );
+  }
+
+  const cacheKey = generateKey("packages:type", tripType);
+
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          cached,
+          `${tripType} packages retrieved successfully (cache)`
+        )
+      );
   }
 
   const currentDate = new Date();
@@ -118,15 +183,14 @@ export const getPackagesByType = asyncHandler(async (req, res) => {
     .sort({ start_date: 1 })
     .lean();
 
+  const data = packages.map(normalizeMedia);
+
+  // Cache for 10 minutes
+  await setCache(cacheKey, data, 600);
+
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        packages.map(normalizeMedia),
-        `${
-          tripType.charAt(0).toUpperCase() + tripType.slice(1)
-        } packages retrieved successfully`
-      )
+      new ApiResponse(200, data, `${tripType} packages retrieved successfully`)
     );
 });

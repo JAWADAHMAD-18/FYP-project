@@ -1,9 +1,7 @@
 import { redisClient } from "../config/redis.config.js";
 
-// Default TTL in seconds (can be overridden per API)
 const DEFAULT_TTL = 300; // 5 minutes
 
-// Check if Redis is ready
 const isRedisReady = () => {
   return redisClient && redisClient.isOpen;
 };
@@ -77,17 +75,8 @@ export const getCacheTTL = async (key) => {
 
 /**
  * Utility function to generate namespaced keys
- * Example: generateKey("dashboard", userId) -> "dashboard:user:123"
+ 
  */
 export const generateKey = (prefix, identifier) => {
   return `${prefix}:${identifier}`;
 };
-
-/**
- * Recommended usage patterns (TTL in seconds):
- * - dashboard summary: 300
- * - bookings: 600
- * - package details: 3600
- * - AI recommendations: 900
- * - user profile: 600
- */
