@@ -21,6 +21,15 @@ app.use(express.static("public"));
 // initSocket(server);
 
 // Routes imports
+import {
+  apiLimiter,
+  chatLimiter,
+  customPackageLimiter,
+  externalApiLimiter,
+  dbQueryLimiter,
+  authLimiter,
+  strictLimiter,
+} from "./utills/rateLimiter.utills.js";
 import userRoutes from "./routes/users.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import packageRoutes from "./routes/packages.routes.js";
@@ -30,15 +39,16 @@ import realtimeChatRoutes from "./routes/realtimeChat.routes.js";
 import userBookingRoutes from "./routes/userBooking.routes.js";
 import adminBookingRoutes from "./routes/adminBooking.routes.js";
 
-
+//for production that proxy
+app.set("trust proxy", 1);
 // Route mounting
-app.use("/api/v1/user", userRoutes);
-app.use("/api/v1/admin", adminRoutes);
-app.use("/api/v1", packageRoutes); // Public package routes
-app.use("/api/v1", customPackageRoutes); // Custom package routes
-app.use('/api/v1/chat', chatBotRoutes); // Chatbot endpoint
+app.use("/api/v1/user",authLimiter, userRoutes);
+app.use("/api/v1/admin",strictLimiter ,adminRoutes);
+app.use("/api/v1",apiLimiter ,packageRoutes); // Public package routes
+app.use("/api/v1", customPackageLimiter,externalApiLimiter,customPackageRoutes); // Custom package routes
+app.use('/api/v1/chat',chatLimiter ,chatBotRoutes); // Chatbot endpoint
 app.use("/api/v1/realtime-chat", realtimeChatRoutes); // Realtime chat routes
-app.use("/api/v1/user/booking", userBookingRoutes); // User booking routes
-app.use("/api/v1/admin/booking", adminBookingRoutes); // Admin booking routes
+app.use("/api/v1/user/booking",dbQueryLimiter, userBookingRoutes); // User booking routes
+app.use("/api/v1/admin/booking", strictLimiter,adminBookingRoutes); // Admin booking routes
 
 export default app;

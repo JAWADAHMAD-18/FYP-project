@@ -8,3 +8,4 @@ const router = Router();
 router.post("/custom-package", verifyAuth, createCustomPackage);
 
 export default router;
+//TODO:also add ai to this custom packag controllers
