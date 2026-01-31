@@ -6,7 +6,8 @@ import {
   addMessageToSession,
   clearUserSession,
   sessionExists,
-  getSessionTTL
+  getSessionTTL,
+  getLastTwoTurns
 } from '../utills/redis.utills.js';
 
 import {
@@ -39,11 +40,9 @@ const handleChat = async (req, res) => {
     }
 
     // Check if message is travel-related
-    if (!isTravelRelated(message)) {
-      // Save the rejected query to session
-      await addMessageToSession(sessionId, 'user', message);
-      await addMessageToSession(sessionId, 'model', getPoliteRejection());
-
+    const isTravel = await isTravelRelated(message);
+    if (!isTravel) {
+      // DO NOT save rejection messages to Redis - just return the rejection
       return res.json({
         success: true,
         response: getPoliteRejection(),
@@ -54,8 +53,9 @@ const handleChat = async (req, res) => {
       });
     }
 
-    // Get conversation history
-    const conversationHistory = await getUserSession(sessionId);
+    // Get conversation history and limit to last 2 turns (4 messages)
+    const fullHistory = await getUserSession(sessionId);
+    const conversationHistory = getLastTwoTurns(fullHistory);
 
     // Generate AI response
     const aiResult = await generateResponse(message, conversationHistory);

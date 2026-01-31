@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { connectRedis, disconnectRedis } from './config/redis.config.js';
-import { handleChat } from './controllers/chat.controller.js';
+import { handleChat } from './controllers/chatbot.controller.js';
 
 console.log('\n🔍 Environment Check:');
 console.log('API Key:', process.env.GEMINI_API_KEY ?

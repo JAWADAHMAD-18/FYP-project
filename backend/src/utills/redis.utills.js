@@ -2,9 +2,8 @@ import { redisClient } from "../config/redis.config.js";
 
 // Session expiry: 2 hours (7200 seconds)
 const SESSION_EXPIRY = 7200;
-//TODO: redis ki etension try out karo local machine kijaggah
-// Maximum messages per session (last 4 user + 4 model)
-const MAX_MESSAGES = 8;
+// Maximum messages per session (last 2 user + 2 model = 2 turns of conversation)
+const MAX_MESSAGES = 16;
 
 // Check Redis availability
 const isRedisReady = () => {
@@ -116,6 +115,31 @@ const getSessionTTL = async (sessionId) => {
   }
 };
 
+// Get last 2 turns of conversation (2 user + 2 model messages)
+const getLastTwoTurns = (messages) => {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return [];
+  }
+
+  // Get last 4 messages (2 turns: user + model, user + model)
+  const lastMessages = messages.slice(-4);
+
+  // Ensure we have complete turns (pairs of user + model)
+  const turns = [];
+  let i = lastMessages.length - 1;
+
+  // Start from the end and work backwards to build complete turns
+  while (i >= 0 && turns.length < 4) {
+    const msg = lastMessages[i];
+    if (msg && msg.role && msg.content) {
+      turns.unshift(msg);
+    }
+    i--;
+  }
+
+  return turns;
+};
+
 // Get all sessions (DEV ONLY)
 const getAllSessions = async () => {
   try {
@@ -141,6 +165,7 @@ export {
   sessionExists,
   getSessionTTL,
   getAllSessions,
+  getLastTwoTurns,
   SESSION_EXPIRY,
   MAX_MESSAGES,
 };
