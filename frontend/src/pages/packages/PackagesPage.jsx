@@ -35,7 +35,8 @@ export default function PackagesPage() {
         if (!cancelled) setAllPackages(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
-        if (!cancelled) setError("Unable to load packages. Please try again later.");
+        if (!cancelled)
+          setError("Unable to load packages. Please try again later.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -76,17 +77,14 @@ export default function PackagesPage() {
 
   const canShowMore = filteredPackages.length > visibleCount;
 
-  const onTripTypeChange = useCallback(
-    (next) => {
-      setTripType((prev) => (prev === next ? null : next));
-      setCategory(null); // cascading reset
-    },
-    []
-  );
+  const onTripTypeChange = useCallback((next) => {
+    setTripType((prev) => (prev === next ? null : next));
+    setCategory(null); // cascading reset
+  }, []);
 
   const onCategoryChange = useCallback(
     (next) => setCategory((prev) => (prev === next ? null : next)),
-    []
+    [],
   );
 
   const onSearchChange = useCallback((next) => setSearchQuery(next), []);
@@ -153,8 +151,7 @@ export default function PackagesPage() {
             Discover Your Next Adventure
           </h1>
           <p className="text-lg text-white/80 max-w-2xl">
-            Browse packages and filter instantly — no reloads, no extra API
-            calls.
+            Browse packages and filter instantly for your perfect trip.
           </p>
         </div>
       </section>
@@ -201,4 +198,3 @@ export default function PackagesPage() {
     </motion.div>
   );
 }
-
