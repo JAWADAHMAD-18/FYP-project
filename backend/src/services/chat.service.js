@@ -1,17 +1,26 @@
+import mongoose from "mongoose";
 import Conversation from "../models/Conversation.models.js";
 import Message from "../models/message.models.js";
 
 class ChatService {
   
   async getOrCreateConversation(userId) {
-    let conversation = await Conversation.findOne({ user: userId });
-
-    if (!conversation) {
-      conversation = await Conversation.create({
-        user: userId,
-        status: "open",
-      });
-    }
+    // Use findOneAndUpdate with upsert to prevent race conditions
+    // Only return non-closed conversations, create new if none exists
+    const conversation = await Conversation.findOneAndUpdate(
+      { user: userId, status: { $ne: "closed" } },
+      {
+        $setOnInsert: {
+          user: userId,
+          status: "open",
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
 
     return conversation;
   }
@@ -30,55 +39,124 @@ class ChatService {
 
  
   async assignAdmin(conversationId, admin) {
-    const conversation = await Conversation.findById(conversationId);
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (!conversation || conversation.assignedAdmin) {
-      return null;
+    try {
+      // Atomically update conversation only if not already assigned
+      // Use findOneAndUpdate with condition to prevent race condition
+      const conversation = await Conversation.findOneAndUpdate(
+        {
+          _id: conversationId,
+          assignedAdmin: null, // Only update if not already assigned
+        },
+        {
+          $set: {
+            assignedAdmin: admin.id,
+            status: "assigned",
+          },
+        },
+        {
+          session,
+          new: true,
+          runValidators: true,
+        }
+      );
+
+      if (!conversation) {
+        await session.abortTransaction();
+        return null;
+      }
+
+      // Create system message within transaction
+      const [systemMessage] = await Message.create(
+        [
+          {
+            conversation: conversation._id,
+            sender: admin.id,
+            senderRole: "admin",
+            type: "system",
+            text: `Your request has been accepted by ${admin.name || "Admin"}`,
+          },
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+      return { conversation, systemMessage };
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
-
-    conversation.assignedAdmin = admin.id;
-    conversation.status = "assigned";
-    await conversation.save();
-
-    // system message
-    const systemMessage = await Message.create({
-      conversation: conversation._id,
-      sender: admin.id,
-      senderRole: "admin",
-      type: "system",
-      text: `Your request has been accepted by ${admin.name}`,
-    });
-
-    return { conversation, systemMessage };
   }
 
   
   async saveMessage({ conversationId, sender, senderRole, text }) {
-    const conversation = await Conversation.findById(conversationId);
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (!conversation) throw new Error("Conversation not found");
+    try {
+      const conversation = await Conversation.findById(conversationId).session(
+        session
+      );
 
-    // Admin restriction
-    if (
-      senderRole === "admin" &&
-      conversation.assignedAdmin?.toString() !== sender.id
-    ) {
-      throw new Error("Admin not assigned to this conversation");
+      if (!conversation) {
+        await session.abortTransaction();
+        throw new Error("Conversation not found");
+      }
+
+      // Check if conversation is closed
+      if (conversation.status === "closed") {
+        await session.abortTransaction();
+        throw new Error("Cannot send message to closed conversation");
+      }
+
+      // Validate user owns conversation (for non-admin users)
+      if (
+        senderRole === "user" &&
+        conversation.user.toString() !== sender.id
+      ) {
+        await session.abortTransaction();
+        throw new Error("Unauthorized: You don't own this conversation");
+      }
+
+      // Admin restriction
+      if (
+        senderRole === "admin" &&
+        conversation.assignedAdmin?.toString() !== sender.id
+      ) {
+        await session.abortTransaction();
+        throw new Error("Admin not assigned to this conversation");
+      }
+
+      // Create message within transaction
+      const [message] = await Message.create(
+        [
+          {
+            conversation: conversation._id,
+            sender: sender.id,
+            senderRole,
+            text,
+          },
+        ],
+        { session }
+      );
+
+      // Update conversation last message atomically
+      conversation.lastMessage = message._id;
+      conversation.lastMessageAt = new Date();
+      await conversation.save({ session });
+
+      await session.commitTransaction();
+      return message;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
-
-    const message = await Message.create({
-      conversation: conversation._id,
-      sender: sender.id,
-      senderRole,
-      text,
-    });
-
-    // Update conversation last message
-    conversation.lastMessage = message._id;
-    conversation.lastMessageAt = new Date();
-    await conversation.save();
-
-    return message;
   }
 
   // CLOSE CONVERSATION
@@ -121,6 +199,21 @@ class ChatService {
     const messages = await this.getMessages(conversationId, { page, limit });
 
     return { conversation, messages };
+  }
+
+  // VALIDATE CONVERSATION ACCESS HELPER
+  async validateConversationAccess(conversationId, userId, isAdmin) {
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation) {
+      return { valid: false, error: "Conversation not found" };
+    }
+
+    if (!isAdmin && conversation.user.toString() !== userId) {
+      return { valid: false, error: "Unauthorized: You don't own this conversation" };
+    }
+
+    return { valid: true, conversation };
   }
 }
 

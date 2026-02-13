@@ -7,25 +7,59 @@ import { initSocket } from "./Sockets/index.js";
 // load environment variables from backend/.env (src is one level deeper)
 dotenv.config({ path: "../.env" });
 
-// Initialize HTTP server and Socket.io
-const server = http.createServer(app);
-
-// Initialize Socket.IO
-initSocket(server);
-
 const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
   try {
+    // Connect to database first
     const connection = await db_connection();
+    console.log("✅ Database connected:", connection.connection.name);
+
+    // Connect to Redis (required for Socket.IO adapter)
     await connectRedis();
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+
+    // Initialize HTTP server
+    const server = http.createServer(app);
+
+    // Initialize Socket.IO (now async, waits for Redis adapter)
+    const io = await initSocket(server);
+
+    // Start server
+    server.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(`📡 Socket.IO ready for connections`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
     });
+
+    // Graceful shutdown
+    const gracefulShutdown = async (signal) => {
+      console.log(`\n${signal} received. Starting graceful shutdown...`);
+      
+      server.close(async () => {
+        console.log("✅ HTTP server closed");
+        
+        if (io) {
+          io.close(() => {
+            console.log("✅ Socket.IO server closed");
+          });
+        }
+        
+        process.exit(0);
+      });
+
+      // Force close after 10 seconds
+      setTimeout(() => {
+        console.error("❌ Forced shutdown after timeout");
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+    process.on("SIGINT", () => gracefulShutdown("SIGINT"));
   } catch (error) {
-    console.log(
-      "tere is connection error during the database connection in index js",
-      error
+    console.error(
+      "❌ Error during server startup:",
+      process.env.NODE_ENV === "production" ? error.message : error
     );
     process.exit(1);
   }

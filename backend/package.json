@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@socket.io/redis-adapter": "^8.3.0",
     "ajv": "^8.17.1",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -28,6 +29,7 @@
     "node-cache": "^5.1.2",
     "node-fetch": "^3.3.2",
     "rate-limit-redis": "^4.3.0",
+    "rate-limiter-flexible": "^9.1.1",
     "redis": "^5.10.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3"

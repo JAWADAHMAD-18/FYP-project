@@ -11,7 +11,7 @@ const messageSchema = new mongoose.Schema(
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      refPath: "senderRole",
+      ref: "User",
     },
 
     senderRole: {
