@@ -33,6 +33,7 @@ import chatBotRoutes from "./routes/chatBot.routes.js";
 import realtimeChatRoutes from "./routes/realtimeChat.routes.js";
 import userBookingRoutes from "./routes/userBooking.routes.js";
 import adminBookingRoutes from "./routes/adminBooking.routes.js";
+import favoriteRoutes from "./routes/favorite.routes.js";
 
 //for production that proxy
 // app.set("trust proxy", 1);
@@ -45,5 +46,6 @@ app.use('/api/v1/chat' ,chatBotRoutes); // Chatbot endpoint
 app.use("/api/v1/realtime-chat", realtimeChatRoutes); // Realtime chat routes
 app.use("/api/v1/user/booking", userBookingRoutes); // User booking routes
 app.use("/api/v1/admin/booking",adminBookingRoutes); // Admin booking routes
+app.use("/api/v1/favorites", favoriteRoutes); // Favorite routes
 
 export default app;

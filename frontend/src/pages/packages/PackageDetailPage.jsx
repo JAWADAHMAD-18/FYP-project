@@ -298,6 +298,7 @@ export default function PackageDetailPage() {
               <div className="flex items-center justify-center w-full sm:w-auto">
                 <FavouriteButton
                   size={26}
+                  packageId={pkg._id}
                   className="p-3 w-full sm:w-auto justify-center rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
                 />
               </div>

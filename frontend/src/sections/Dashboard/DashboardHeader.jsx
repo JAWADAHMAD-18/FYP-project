@@ -2,43 +2,29 @@ import { motion } from "framer-motion";
 import { Heart, ArrowRight, Settings, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/useAuth.js";
-import TripFusionLoader from "../../components/Loader/TripFusionLoader"
+import TripFusionLoader from "../../components/Loader/TripFusionLoader";
+import { getFavoriteCount } from "../../services/favorite.service.js";
 
 const UserJourney = () => {
   const { user, loading } = useAuth();
-
   const [favoritePackages, setFavoritePackages] = useState([]);
-  const [loadingFavorites, setLoadingFavorites] = useState(false);
 
-  const hasFavorites = user?.favorites?.length > 0;
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
 
   useEffect(() => {
-    const fetchFavoritePackages = async () => {
-      if (!user || !hasFavorites) return;
-
-      try {
-        setLoadingFavorites(true);
-
-        const requests = user.favorites.map((packageId) =>
-          fetch(`/packages/${packageId}`).then((res) => res.json())
-        );
-
-        const packages = await Promise.all(requests);
-        setFavoritePackages(packages);
-      } catch (error) {
-        console.error("Error fetching favorite packages:", error);
-      } finally {
-        setLoadingFavorites(false);
+    const fetchCount = async () => {
+      const res = await getFavoriteCount();
+      if (res.success) {
+        setFavoriteCount(res.data);
       }
     };
 
-    fetchFavoritePackages();
-  }, [user]);
+    fetchCount();
+  }, []);
 
   if (loading) {
-    return (
-      <TripFusionLoader/>
-    );
+    return <TripFusionLoader />;
   }
 
   return (
@@ -86,7 +72,8 @@ const UserJourney = () => {
                   Favorites
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {user.favorites.length}
+                  {/* {user.favorites.length} */}
+                  {favoriteCount}
                 </p>
               </div>
 

@@ -34,12 +34,6 @@ const UserSchema = new Schema(
     refreshToken: {
       type: String,
     },
-    favorites: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Package",
-      },
-    ],
   },
   { timestamps: true }
 );
