@@ -12,6 +12,8 @@ import {
 import PackageCard from "../../components/Cards/PackagesCard.jsx";
 import PackageSkeleton from "../../components/Loader/PackageSkeleton.jsx";
 import { getPackageById, getPackages } from "../../services/package.service.js";
+import FavouriteButton from "./components/FavouriteButton";
+import BookingButton from "./components/BookingButton";
 
 function normalizeTripTypeLabel(apiTripType) {
   if (apiTripType === "domestic") return "National";
@@ -48,7 +50,8 @@ export default function PackageDetailPage() {
         setActiveImage(imgs[0] || null);
       } catch (e) {
         console.error(e);
-        if (!cancelled) setError("Unable to load this package. Please try again later.");
+        if (!cancelled)
+          setError("Unable to load this package. Please try again later.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -72,7 +75,7 @@ export default function PackageDetailPage() {
         const all = await getPackages(); // cached/deduped
         if (cancelled) return;
         const sameType = (all || []).filter(
-          (p) => p?.trip_type === pkg.trip_type && p?._id !== pkg._id
+          (p) => p?.trip_type === pkg.trip_type && p?._id !== pkg._id,
         );
         // Random 3
         const shuffled = sameType
@@ -236,7 +239,9 @@ export default function PackageDetailPage() {
                   <MapPin size={16} className="text-[#0D9488]" />
                   {pkg.location || "—"}
                   {pkg.city ? <span className="text-gray-400">•</span> : null}
-                  {pkg.city ? <span className="text-gray-700">{pkg.city}</span> : null}
+                  {pkg.city ? (
+                    <span className="text-gray-700">{pkg.city}</span>
+                  ) : null}
                 </p>
               </div>
               <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
@@ -245,9 +250,13 @@ export default function PackageDetailPage() {
                 </p>
                 <p className="mt-2 font-semibold text-[#0A1A44] flex items-center gap-2">
                   <Calendar size={16} className="text-[#0D9488]" />
-                  {pkg.start_date ? new Date(pkg.start_date).toLocaleDateString() : "—"}{" "}
+                  {pkg.start_date
+                    ? new Date(pkg.start_date).toLocaleDateString()
+                    : "—"}{" "}
                   -{" "}
-                  {pkg.end_date ? new Date(pkg.end_date).toLocaleDateString() : "—"}
+                  {pkg.end_date
+                    ? new Date(pkg.end_date).toLocaleDateString()
+                    : "—"}
                 </p>
               </div>
             </div>
@@ -277,6 +286,20 @@ export default function PackageDetailPage() {
                     </span>
                   ) : null}
                 </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center gap-4">
+              <BookingButton
+                packageId={pkg._id}
+                className="flex-1 sm:flex-none"
+              />
+              <div className="flex items-center justify-center w-full sm:w-auto">
+                <FavouriteButton
+                  size={26}
+                  className="p-3 w-full sm:w-auto justify-center rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+                />
               </div>
             </div>
           </div>
@@ -311,4 +334,3 @@ export default function PackageDetailPage() {
     </motion.div>
   );
 }
-
