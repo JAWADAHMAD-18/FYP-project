@@ -3,7 +3,11 @@ import { Heart, ArrowRight, Settings, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/useAuth.js";
 import TripFusionLoader from "../../components/Loader/TripFusionLoader";
-import { getFavoriteCount } from "../../services/favorite.service.js";
+import {
+  getFavoriteCount,
+  getUserFavorites,
+} from "../../services/favorite.service.js";
+import { getPackageById } from "../../services/package.service.js";
 
 const UserJourney = () => {
   const { user, loading } = useAuth();
@@ -13,15 +17,40 @@ const UserJourney = () => {
   const [favoriteCount, setFavoriteCount] = useState(0);
 
   useEffect(() => {
-    const fetchCount = async () => {
-      const res = await getFavoriteCount();
-      if (res.success) {
-        setFavoriteCount(res.data);
+    if (!user?._id) return;
+
+    const fetchFavorites = async () => {
+      try {
+        setLoadingFavorites(true);
+
+        const res = await getUserFavorites();
+
+        if (!res.success) return;
+
+        // Extract package IDs
+        const packageIds = res.data.map((fav) => fav.package);
+
+        // Fetch full package details
+        const fullPackages = await Promise.all(
+          packageIds.map((id) => getPackageById(id)),
+        );
+
+        setFavoritePackages(fullPackages);
+
+        // Count
+        const countRes = await getFavoriteCount();
+        if (countRes.success) {
+          setFavoriteCount(countRes.data);
+        }
+      } catch (err) {
+        console.error("Error fetching favorites:", err);
+      } finally {
+        setLoadingFavorites(false);
       }
     };
 
-    fetchCount();
-  }, []);
+    fetchFavorites();
+  }, [user]);
 
   if (loading) {
     return <TripFusionLoader />;

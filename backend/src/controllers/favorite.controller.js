@@ -102,25 +102,9 @@ export const removeFromFavorite = asyncHandler(async (req, res) => {
 export const getFavoriteCount = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const cacheKey = generateKey("user:favorites:count", userId.toString());
-
-  const cached = await getCache(cacheKey);
-  if (cached) {
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, cached, "Favorite count retrieved (cache)")
-      );
-  }
-
   const count = await Favorite.countDocuments({ user: userId });
-
-  await setCache(cacheKey, count, 600);
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, count, "Favorite count retrieved successfully")
-    );
+    .json(new ApiResponse(200, count, "Favorite count retrieved successfully"));
 });
-

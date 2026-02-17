@@ -21,13 +21,27 @@ export default function Navbar() {
         {/* CENTER MENU (Desktop) */}
         {user && (
           <div className="hidden md:flex gap-8 text-lg font-medium">
-            <Btn to="/dashboard" data-aos="fade-down" data-aos-duration="600" data-aos-easing="linear">
+            <Btn
+              to="/dashboard"
+              data-aos="fade-down"
+              data-aos-duration="600"
+              data-aos-easing="linear"
+            >
               Home
             </Btn>
-            <Btn to="/packages" data-aos="fade-down" data-aos-duration="700" data-aos-easing="linear">
+            <Btn
+              to="/packages"
+              data-aos="fade-down"
+              data-aos-duration="700"
+              data-aos-easing="linear"
+            >
               packages
             </Btn>
-            <Btn data-aos="fade-down" data-aos-duration="800" data-aos-easing="linear">
+            <Btn
+              data-aos="fade-down"
+              data-aos-duration="800"
+              data-aos-easing="linear"
+            >
               Contact
             </Btn>
           </div>
@@ -38,10 +52,20 @@ export default function Navbar() {
           {/* Guest */}
           {!user && (
             <div className="flex items-center gap-6 ml-auto text-lg font-medium">
-              <Btn to="/signup" data-aos="fade-down" data-aos-duration="600" data-aos-easing="linear">
+              <Btn
+                to="/signup"
+                data-aos="fade-down"
+                data-aos-duration="600"
+                data-aos-easing="linear"
+              >
                 SignUp
               </Btn>
-              <Btn to="/login" data-aos="fade-down" data-aos-duration="700" data-aos-easing="linear">
+              <Btn
+                to="/login"
+                data-aos="fade-down"
+                data-aos-duration="700"
+                data-aos-easing="linear"
+              >
                 Login
               </Btn>
             </div>
@@ -73,28 +97,51 @@ export default function Navbar() {
 
         {/* MOBILE SLIDE MENU */}
         {user && (
-          <div
-            className={`fixed top-0 right-0 h-full bg-white shadow-xl w-[40%]
-            transform transition-transform duration-300 pt-24 px-6 flex flex-col gap-6 text-lg font-medium
-            ${open ? "translate-x-0" : "translate-x-full"}`}
-          >
-            <Btn data-aos="fade-right" data-aos-duration="500" data-aos-easing="linear">
-              Home
-            </Btn>
-            <Btn data-aos="fade-right" data-aos-duration="600" data-aos-easing="linear">
-              About
-            </Btn>
-            <Btn data-aos="fade-right" data-aos-duration="700" data-aos-easing="linear">
-              Contact
-            </Btn>
+          <>
+            {/* Overlay */}
+            {open && (
+              <div
+                onClick={() => setOpen(false)}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30"
+              />
+            )}
 
-            <button
-              onClick={logout}
-              className="mt-auto text-red-600 font-semibold text-lg"
+            {/* Sidebar */}
+            <div
+              className={`fixed top-0 right-0 h-full bg-white shadow-xl w-[75%] max-w-sm
+      transform transition-transform duration-300 z-40
+      pt-24 px-6 flex flex-col gap-6 text-lg font-medium
+      ${open ? "translate-x-0" : "translate-x-full"}`}
             >
-              Logout
-            </button>
-          </div>
+              {/* Close Button */}
+              <button
+                onClick={() => setOpen(false)}
+                className="absolute top-6 right-6 text-3xl text-[#0A1A44]"
+              >
+                ✕
+              </button>
+
+              <Btn to="/dashboard" onClick={() => setOpen(false)}>
+                Home
+              </Btn>
+
+              <Btn to="/packages" onClick={() => setOpen(false)}>
+                Packages
+              </Btn>
+
+              <Btn onClick={() => setOpen(false)}>Contact</Btn>
+
+              <button
+                onClick={() => {
+                  logout();
+                  setOpen(false);
+                }}
+                className="mt-auto text-red-600 font-semibold text-lg"
+              >
+                Logout
+              </button>
+            </div>
+          </>
         )}
       </nav>
     </div>

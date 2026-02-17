@@ -3,15 +3,12 @@ import api from "../api/Api.js";
 export const getUserFavorites = async (signal) => {
   try {
     const response = await api.get("/favorites", { signal });
-    // API returns standard ApiResponse: { statusCode, data, message, success }
     return {
       success: true,
-      data: response.data.data, // Accessing the 'data' field of the ApiResponse
-      message: response.data.message, // Accessing the 'message' field of the ApiResponse
+      data: response.data.data, 
     };
   } catch (error) {
     if (error.name === "CanceledError" || error.code === "ERR_CANCELED") {
-      // Improve DX by explicitly identifying cancellations
       throw error;
     }
     return {
@@ -30,6 +27,7 @@ export const addFavorite = async (packageId) => {
     return {
       success: true,
       data: response.data.data,
+      message: response.data.message,
     };
   } catch (error) {
     return {
@@ -39,6 +37,10 @@ export const addFavorite = async (packageId) => {
   }
 };
 
+export const getFavoriteCount = async () => {
+  const response = await api.get("/favorites/count");
+  return response.data;
+};
 
 export const removeFavorite = async (packageId) => {
   if (!packageId) return { success: false, error: "Package ID is required" };
@@ -57,8 +59,5 @@ export const removeFavorite = async (packageId) => {
   }
 };
 
-export const getFavoriteCount = async () => {
-  const response = await api.get("/favorites/count");
-  return response.data;
-};
+
 
