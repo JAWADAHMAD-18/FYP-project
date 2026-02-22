@@ -27,7 +27,7 @@ const UpcomingTrips = () => {
   }
 
   return (
-    <section className="px-6 md:px-12 py-8 bg-gray-100/50">
+    <section className="px-6 md:px-12 py-5 bg-gray-100/50">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
@@ -131,11 +131,11 @@ const UpcomingTrips = () => {
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar size={16} className="text-teal-500" />
                         {trip.startDate
-                          ? new Date(trip.startDate).toLocaleDateString()
+                          ? new Date(trip.start_Date).toLocaleDateString()
                           : "TBD"}{" "}
                         -{" "}
                         {trip.endDate
-                          ? new Date(trip.endDate).toLocaleDateString()
+                          ? new Date(trip.end_Date).toLocaleDateString()
                           : "TBD"}
                       </div>
                     </div>

@@ -47,6 +47,11 @@ const BookingSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    savings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     bookingDate: {
       type: Date,
       default: () => new Date(),

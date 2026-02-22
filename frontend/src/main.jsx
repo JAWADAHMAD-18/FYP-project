@@ -15,6 +15,7 @@ const PackagesPage = lazy(() => import("./pages/packages/PackagesPage.jsx"));
 const PackageDetailPage = lazy(
   () => import("./pages/packages/PackageDetailPage.jsx"),
 );
+const BookingPage = lazy(() => import("./pages/booking/BookingPage.jsx"));
 
 const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
       {
         path: "packages/:id",
         element: <PackageDetailPage />,
+      },
+      {
+        path: "booking/:packageId",
+        element: <BookingPage />,
       },
       {
         path: "dashboard",

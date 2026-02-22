@@ -10,9 +10,6 @@ const inFlightById = new Map();
 
 const extractPackagesList = (responseData) => {
   const wrapper = responseData || {};
-  // Support both correct and legacy ApiResponse argument order.
-  // - Correct: { data: { packages: [...] }, message: "..." }
-  // - Legacy:  { data: "...", message: { packages: [...] } }
   return (
     wrapper?.data?.packages ??
     wrapper?.message?.packages ??
@@ -23,10 +20,7 @@ const extractPackagesList = (responseData) => {
 
 const extractSinglePackage = (responseData) => {
   const wrapper = responseData || {};
-  // Support:
-  // - Correct: { data: packageObject }
-  // - Legacy:  { message: packageObject }
-  // - Ad-hoc:  { package: packageObject }
+  
   const candidate =
     wrapper?.data ??
     wrapper?.message ??

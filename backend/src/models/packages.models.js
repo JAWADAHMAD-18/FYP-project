@@ -17,8 +17,12 @@ const packageSchema = new Schema(
       type: String,
       required: true,
     },
-    duration: {
-      type: String,
+    durationDays: {
+      type: Number,
+      required: true,
+    },
+    durationNights: {
+      type: Number,
       required: true,
     },
     // Legacy single image used by existing UI cards
@@ -51,6 +55,11 @@ const packageSchema = new Schema(
     trip_type: {
       type: String,
       enum: ["domestic", "international"],
+      required: true,
+    },
+    category: {
+      type: String,
+      enum: ["accommodations", "flights", "experiences"],
       required: true,
     },
     start_date: {

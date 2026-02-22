@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import asyncHandler from "../utills/asynchandler.utills.js";
 import Package from "../models/packages.models.js";
 import Booking from "../models/booking.models.js";
@@ -7,14 +8,15 @@ import cloudinaryImageUpload from "../utills/cloudinary.utills.js";
 
 // Create a new booking
 export const createBooking = asyncHandler(async (req, res) => {
-  const { package: packageId, numPeople = 1, travelDate, notes } = req.body;
+  const { package: packageId, numPeople = 1, notes } = req.body;
   const userId = req.user._id;
 
-  // Validate package exists
-  const pkg = await Package.findById(packageId);
-  if (!pkg) throw new ApiError(404, "Package not found");
+  const parsedNumPeople = parseInt(numPeople, 10);
+  if (!packageId) throw new ApiError(400, "Package ID is required");
+  if (isNaN(parsedNumPeople) || parsedNumPeople < 1)
+    throw new ApiError(400, "numPeople must be a positive integer");
 
-  // Upload payment proof if provided
+  // Upload payment proof before opening transaction (I/O outside critical section)
   let paymentProof = {
     imageUrl: null,
     uploadedAt: null,
@@ -31,48 +33,128 @@ export const createBooking = asyncHandler(async (req, res) => {
     paymentProof.uploadedAt = new Date();
   }
 
-  // Create package snapshot
-  const packageSnapshot = {
-    title: pkg.title,
-    destination: pkg.location,
-    durationDays: pkg.duration,
-    basePrice: pkg.price,
-    images: [pkg.image],
-    includes: pkg.includes || [],
-    excludes: pkg.excludes || [],
+  // ── Attempt with Mongoose session (requires replica set) ──────────────────
+  let booking;
+
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      // Lock-read within transaction
+      const pkg = await Package.findById(packageId).session(session);
+      if (!pkg) throw new ApiError(404, "Package not found");
+      if (pkg.available === false)
+        throw new ApiError(400, "This package is no longer available");
+
+      const availableSlots = Number(pkg.available_slot ?? 0);
+      if (availableSlots < parsedNumPeople)
+        throw new ApiError(
+          400,
+          `Not enough available slots. Only ${availableSlots} slot(s) remaining.`
+        );
+
+      // Server-side price calculation — never trust client total
+      const pricePerPerson = Number(pkg.price);
+      const totalPrice = pricePerPerson * parsedNumPeople;
+
+      // Loyalty savings: 5% for bookings under 500,000; 10% for larger bookings
+      const savingsRate = totalPrice < 500_000 ? 0.05 : 0.1;
+      const savings = Math.round(totalPrice * savingsRate);
+
+      // Package snapshot — immutable record of package at booking time
+      const packageSnapshot = {
+        title: pkg.title,
+        destination: pkg.location,
+        durationDays: pkg.duration,
+        basePrice: pkg.price,
+        category: pkg.category,
+        tripType: pkg.trip_type,
+        start_date: pkg.start_date,
+        end_date: pkg.end_date,
+        images: [pkg.coverImage || pkg.image].filter(Boolean),
+        includes: pkg.includes || [],
+        excludes: pkg.excludes || [],
+      };
+
+      // Atomically decrement available_slot
+      const updated = await Package.findByIdAndUpdate(
+        packageId,
+        { $inc: { available_slot: -parsedNumPeople } },
+        { session, new: true }
+      );
+      if (!updated)
+        throw new ApiError(500, "Failed to update package availability");
+
+      // Create booking within the same transaction
+      const created = await Booking.create(
+        [
+          {
+            user: userId,
+            package: packageId,
+            numPeople: parsedNumPeople,
+            packageSnapshot,
+            currency: "USD",
+            pricePerPerson,
+            totalPrice,
+            savings,
+            start_date,
+            end_date,
+            // travelDate is fixed from the package's start_date
+            travelDate: pkg.start_date || null,
+            notes: notes || null,
+            paymentProof,
+            bookingStatus: "Pending",
+            paymentStatus: "NotPaid",
+          },
+        ],
+        { session }
+      );
+
+      booking = created[0];
+    });
+  } catch (err) {
+    // Surface ApiErrors directly; wrap unexpected errors
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(
+      500,
+      err?.message || "Booking failed. Please try again."
+    );
+  } finally {
+    session.endSession();
+  }
+
+  // Return clean response — future payment fields ready to attach here
+  const responsePayload = {
+    bookingId: booking._id,
+    bookingCode: booking.bookingCode,
+    bookingStatus: booking.bookingStatus,
+    paymentStatus: booking.paymentStatus,
+    numPeople: booking.numPeople,
+    pricePerPerson: booking.pricePerPerson,
+    totalPrice: booking.totalPrice,
+    savings: booking.savings,
+    travelDate: booking.travelDate,
+    start_date: booking.start_date,
+    end_date: booking.end_date,
+    packageSnapshot: booking.packageSnapshot,
+    createdAt: booking.createdAt,
   };
-
-  // Calculate total price
-  const totalPrice = pkg.price * numPeople;
-
-  // Create booking
-  const booking = await Booking.create({
-    user: userId,
-    package: packageId,
-    numPeople,
-    packageSnapshot,
-    currency: "USD",
-    pricePerPerson: pkg.price,
-    totalPrice,
-    travelDate: travelDate || null,
-    notes: notes || null,
-    paymentProof,
-    bookingStatus: "Pending",
-    paymentStatus: "NotPaid",
-  });
 
   return res
     .status(201)
-    .json(new ApiResponse(201, booking, "Booking created successfully"));
+    .json(
+      new ApiResponse(201, responsePayload, "Booking created successfully")
+    );
 });
 
-// Get all bookings by user
+// ─── Get all bookings for the logged-in user
 export const getMyBookings = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
   const bookings = await Booking.find({ user: userId })
     .sort({ bookingDate: -1 })
-    .select("-__v");
+    .select("-__v")
+    .lean();
 
   return res
     .status(200)
@@ -81,12 +163,12 @@ export const getMyBookings = asyncHandler(async (req, res) => {
     );
 });
 
-// Get a single booking by ID
+// ─── Get a single booking by ID (owner-only)
 export const getMyBookingById = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const bookingId = req.params.id;
 
-  const booking = await Booking.findById(bookingId).select("-__v");
+  const booking = await Booking.findById(bookingId).select("-__v").lean();
   if (!booking) throw new ApiError(404, "Booking not found");
 
   if (booking.user.toString() !== userId.toString())
@@ -99,7 +181,7 @@ export const getMyBookingById = asyncHandler(async (req, res) => {
     );
 });
 
-// Cancel a booking by user
+// ─── Cancel a booking (owner-only)
 export const cancelMyBooking = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const bookingId = req.params.id;
