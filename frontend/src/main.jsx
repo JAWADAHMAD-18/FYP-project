@@ -7,6 +7,9 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 // Route-level code splitting to avoid loading all pages on first paint
 const App = lazy(() => import("./App.jsx"));
 const ProtectedRoute = lazy(() => import("./routes/ProtectedRoute.jsx"));
+const AdminProtectedRoute = lazy(
+  () => import("./routes/AdminProtectedRoute.jsx"),
+);
 const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
 const Signup = lazy(() => import("./pages/Signup.jsx"));
 const Login = lazy(() => import("./pages/LoginPage.jsx"));
@@ -16,6 +19,9 @@ const PackageDetailPage = lazy(
   () => import("./pages/packages/PackageDetailPage.jsx"),
 );
 const BookingPage = lazy(() => import("./pages/booking/BookingPage.jsx"));
+const AdminDashboardPage = lazy(
+  () => import("./pages/AdminDashboardPage.jsx"),
+);
 
 const router = createBrowserRouter([
   {
@@ -45,6 +51,16 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <Dashboard />,
+          },
+        ],
+      },
+      {
+        path: "admin",
+        element: <AdminProtectedRoute />,
+        children: [
+          {
+            path: "dashboard",
+            element: <AdminDashboardPage />,
           },
         ],
       },

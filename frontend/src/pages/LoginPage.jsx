@@ -16,9 +16,13 @@ const Login = () => {
     password: "",
   });
 
+  // Guard: redirect already-logged-in users away from the login page
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      console.log("[Login] Already authenticated. isAdmin:", user.isAdmin);
+      navigate(user.isAdmin ? "/admin/dashboard" : "/dashboard", {
+        replace: true,
+      });
     }
   }, [user, navigate]);
 
@@ -38,10 +42,21 @@ const Login = () => {
     try {
       setSubmitting(true);
 
-      await login({
+      const userData = await login({
         email: form.email.trim(),
         password: form.password,
       });
+
+      // Use returned userData directly to avoid React state race condition
+      console.log(
+        "[Login] handleSubmit — userData.isAdmin:",
+        userData?.isAdmin,
+      );
+      if (userData?.isAdmin) {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password");
     } finally {

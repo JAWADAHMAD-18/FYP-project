@@ -5,7 +5,7 @@ import api, { setAccessToken as setApiToken } from "../api/Api";
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(
-    localStorage.getItem("accessToken") || null
+    localStorage.getItem("accessToken") || null,
   );
   const [loading, setLoading] = useState(true);
 
@@ -31,23 +31,30 @@ export function AuthProvider({ children }) {
   // Apply auth after login / restore
   const applyAuth = useCallback(
     async (token) => {
-      if (!token) return;
-
+      if (!token) return null;
 
       setAccessToken(token);
       localStorage.setItem("accessToken", token);
       setApiToken(token);
 
       const userData = await fetchUser(token);
-      if (userData) setUser(userData);
-      else {
-        console.warn("User fetch failed after applying token");
+      if (userData) {
+        setUser(userData);
+        console.log(
+          "[Auth] User applied:",
+          userData?.name,
+          "| isAdmin:",
+          userData?.isAdmin,
+        );
+      } else {
+        console.warn("[Auth] User fetch failed after applying token");
         setAccessToken(null);
         setUser(null);
         localStorage.removeItem("accessToken");
       }
+      return userData; // ← return so callers get fresh data (avoids React state race)
     },
-    [fetchUser]
+    [fetchUser],
   );
 
   // Restore auth on page reload
@@ -75,7 +82,9 @@ export function AuthProvider({ children }) {
       const token = res.data?.data?.accessToken;
       if (!token) throw new Error("Access token missing in response");
 
-      await applyAuth(token);
+      const userData = await applyAuth(token);
+      console.log("[Auth] Login successful. isAdmin:", userData?.isAdmin);
+      return userData; // ← return fresh user data to the caller
     } catch (err) {
       console.error("Login failed:", err);
       throw err;
