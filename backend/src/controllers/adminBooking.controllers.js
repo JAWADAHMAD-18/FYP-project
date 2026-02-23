@@ -2,6 +2,7 @@ import asyncHandler from "../utills/asynchandler.utills.js";
 import Booking from "../models/booking.models.js";
 import { ApiError } from "../utills/apiError.utills.js";
 import { ApiResponse } from "../utills/apiResponse.utills.js";
+import { invalidateDashboardCache } from "./adminDashboardSummary.controllers.js";
 
 // Get all bookings (admin)
 export const getAllBookings = asyncHandler(async (req, res) => {
@@ -46,6 +47,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   booking.paymentProof.verifiedAt = new Date();
 
   await booking.save();
+  invalidateDashboardCache();
 
   return res
     .status(200)
@@ -69,6 +71,7 @@ export const rejectPayment = asyncHandler(async (req, res) => {
   booking.notes = reason || "Payment rejected by admin";
 
   await booking.save();
+  invalidateDashboardCache();
 
   return res
     .status(200)
@@ -93,6 +96,7 @@ export const cancelBookingByAdmin = asyncHandler(async (req, res) => {
   booking.cancelledAt = new Date();
 
   await booking.save();
+  invalidateDashboardCache();
 
   return res
     .status(200)

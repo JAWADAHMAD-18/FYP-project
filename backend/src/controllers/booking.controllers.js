@@ -5,6 +5,7 @@ import Booking from "../models/booking.models.js";
 import { ApiError } from "../utills/apiError.utills.js";
 import { ApiResponse } from "../utills/apiResponse.utills.js";
 import cloudinaryImageUpload from "../utills/cloudinary.utills.js";
+import { invalidateDashboardCache } from "./adminDashboardSummary.controllers.js";
 
 // Create a new booking
 export const createBooking = asyncHandler(async (req, res) => {
@@ -140,6 +141,8 @@ export const createBooking = asyncHandler(async (req, res) => {
     createdAt: booking.createdAt,
   };
 
+  invalidateDashboardCache();
+
   return res
     .status(201)
     .json(
@@ -202,6 +205,7 @@ export const cancelMyBooking = asyncHandler(async (req, res) => {
   booking.cancelledAt = new Date();
 
   await booking.save();
+  invalidateDashboardCache();
 
   return res
     .status(200)
