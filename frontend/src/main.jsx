@@ -19,9 +19,8 @@ const PackageDetailPage = lazy(
   () => import("./pages/packages/PackageDetailPage.jsx"),
 );
 const BookingPage = lazy(() => import("./pages/booking/BookingPage.jsx"));
-const AdminDashboardPage = lazy(
-  () => import("./pages/AdminDashboardPage.jsx"),
-);
+const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage.jsx"));
+const AddPackagePage = lazy(() => import("./pages/AddPackage.jsx"));
 
 const router = createBrowserRouter([
   {
@@ -61,6 +60,14 @@ const router = createBrowserRouter([
           {
             path: "dashboard",
             element: <AdminDashboardPage />,
+          },
+          {
+            path: "package/add-package",
+            element: <AddPackagePage />,
+          },
+          {
+            path: "package/:id",
+            element: <AddPackagePage />,
           },
         ],
       },

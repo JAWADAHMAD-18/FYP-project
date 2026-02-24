@@ -6,11 +6,19 @@ import { motion } from "framer-motion";
 import { RefreshCw, LayoutDashboard } from "lucide-react";
 
 // Lazy-load heavy sections
-const RevenueCards = lazy(() => import("../sections/adminDashboardRevenueCards"));
-const BookingStatsCards = lazy(() => import("../sections/adminDashboard/BookingStatsCards"));
+const RevenueCards = lazy(
+  () => import("../sections/adminDashboard/RevenueCards"),
+);
+const BookingStatsCards = lazy(
+  () => import("../sections/adminDashboard/BookingStatsCards"),
+);
 const GrowthCard = lazy(() => import("../sections/adminDashboard/GrowthCard"));
-const RevenueChart = lazy(() => import("../sections/adminDashboard/RevenueChart"));
-const RecentActivityTimeline = lazy(() => import("../sections/adminDashboard/RecentActivityTimeline"));
+const RevenueChart = lazy(
+  () => import("../sections/adminDashboard/RevenueChart"),
+);
+const RecentActivityTimeline = lazy(
+  () => import("../sections/adminDashboard/RecentActivityTimeline"),
+);
 
 const SectionFallback = () => (
   <div className="animate-pulse bg-gray-100 rounded-2xl h-40" />

@@ -13,10 +13,14 @@ export const addPackage = asyncHandler(async (req, res) => {
     title,
     description,
     price,
-    duration,
+    durationDays,
+    durationNights,
+    highlights,
     available,
     location,
+    city,
     trip_type,
+    category,
     start_date,
     end_date,
     available_slot,
@@ -35,16 +39,20 @@ export const addPackage = asyncHandler(async (req, res) => {
     title,
     description,
     price,
-    duration,
+    durationDays,
+    durationNights,
+    highlights,
     available,
     location,
+    city,
     trip_type,
+    category,
     start_date,
     end_date,
     available_slot,
     image: imageUpload.url,
     imagePublicId: imageUpload.public_id,
-    // createdBy: req.user._id,
+    createdBy: req.user._id,
   });
   return res
     .status(201)
@@ -72,8 +80,7 @@ export const updatePackage = asyncHandler(async (req, res) => {
     updates.image = imageUpload.url;
     updates.imagePublicId = imageUpload.public_id;
 
-    // ---------- DELETE OLD IMAGE ON CLOUDINARY (a bit below this block) ----------
-    // If there was a previous image public id, remove it from Cloudinary
+    
     const oldPublicId = existingPackage.imagePublicId;
     if (oldPublicId) {
       try {
