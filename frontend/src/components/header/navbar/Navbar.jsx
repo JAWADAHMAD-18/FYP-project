@@ -6,6 +6,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
+  const isAdmin = user?.isAdmin === true;
+
   return (
     <div className="fixed top-0 left-0 w-full h-20 z-20 bg-white/40 backdrop-blur-md shadow-sm">
       <nav className="flex justify-between items-center px-6 md:px-12 h-full">
@@ -21,29 +23,60 @@ export default function Navbar() {
         {/* CENTER MENU (Desktop) */}
         {user && (
           <div className="hidden md:flex gap-8 text-lg font-medium">
-            <Btn
-              to="/dashboard"
-              data-aos="fade-down"
-              data-aos-duration="600"
-              data-aos-easing="linear"
-            >
-              Home
-            </Btn>
-            <Btn
-              to="/packages"
-              data-aos="fade-down"
-              data-aos-duration="700"
-              data-aos-easing="linear"
-            >
-              packages
-            </Btn>
-            <Btn
-              data-aos="fade-down"
-              data-aos-duration="800"
-              data-aos-easing="linear"
-            >
-              Contact
-            </Btn>
+            {isAdmin ? (
+              <>
+                <Btn
+                  to="/admin/dashboard"
+                  data-aos="fade-down"
+                  data-aos-duration="600"
+                  data-aos-easing="linear"
+                >
+                  Dashboard
+                </Btn>
+                <Btn
+                  to="/packages"
+                  data-aos="fade-down"
+                  data-aos-duration="700"
+                  data-aos-easing="linear"
+                >
+                  Packages
+                </Btn>
+                <Btn
+                  to="/admin/package/add-package"
+                  data-aos="fade-down"
+                  data-aos-duration="800"
+                  data-aos-easing="linear"
+                >
+                  Add Package
+                </Btn>
+              </>
+            ) : (
+              <>
+                <Btn
+                  to="/dashboard"
+                  data-aos="fade-down"
+                  data-aos-duration="600"
+                  data-aos-easing="linear"
+                >
+                  Home
+                </Btn>
+                <Btn
+                  to="/packages"
+                  data-aos="fade-down"
+                  data-aos-duration="700"
+                  data-aos-easing="linear"
+                >
+                  Packages
+                </Btn>
+                <Btn
+                  data-aos="fade-down"
+                  data-aos-duration="800"
+                  data-aos-easing="linear"
+                >
+                  Contact
+                </Btn>
+              </>
+            )}
           </div>
         )}
 
@@ -86,64 +119,57 @@ export default function Navbar() {
 
               {/* Hamburger */}
               <button
-                onClick={() => setOpen(!open)}
+                onClick={() => setOpen((prev) => !prev)}
                 className="md:hidden text-3xl text-[#0A1A44]"
+                aria-label="Toggle menu"
               >
-                ☰
+                {open ? "✕" : "☰"}
               </button>
             </>
           )}
         </div>
+      </nav>
 
-        {/* MOBILE SLIDE MENU */}
-        {user && (
-          <>
-            {/* Overlay */}
-            {open && (
-              <div
-                onClick={() => setOpen(false)}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30"
-              />
+      {/* MOBILE DROPDOWN MENU */}
+      {user && open && (
+        <div className="md:hidden absolute top-20 left-0 w-full bg-white shadow-lg border-t border-gray-100 z-30">
+          <div className="flex flex-col px-6 py-4 gap-4 text-lg font-medium">
+            {isAdmin ? (
+              <>
+                <Btn to="/admin/dashboard" onClick={() => setOpen(false)}>
+                  Dashboard
+                </Btn>
+                <Btn to="/packages" onClick={() => setOpen(false)}>
+                  Packages
+                </Btn>
+                <Btn to="/admin/package" onClick={() => setOpen(false)}>
+                  Add Package
+                </Btn>
+              </>
+            ) : (
+              <>
+                <Btn to="/dashboard" onClick={() => setOpen(false)}>
+                  Home
+                </Btn>
+                <Btn to="/packages" onClick={() => setOpen(false)}>
+                  Packages
+                </Btn>
+                <Btn onClick={() => setOpen(false)}>Contact</Btn>
+              </>
             )}
 
-            {/* Sidebar */}
-            <div
-              className={`fixed top-0 right-0 h-full bg-white shadow-xl w-[75%] max-w-sm
-      transform transition-transform duration-300 z-40
-      pt-24 px-6 flex flex-col gap-6 text-lg font-medium
-      ${open ? "translate-x-0" : "translate-x-full"}`}
+            <button
+              onClick={() => {
+                logout();
+                setOpen(false);
+              }}
+              className="text-left text-red-600 font-semibold text-lg mt-2 pt-3 border-t border-gray-100"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => setOpen(false)}
-                className="absolute top-6 right-6 text-3xl text-[#0A1A44]"
-              >
-                ✕
-              </button>
-
-              <Btn to="/dashboard" onClick={() => setOpen(false)}>
-                Home
-              </Btn>
-
-              <Btn to="/packages" onClick={() => setOpen(false)}>
-                Packages
-              </Btn>
-
-              <Btn onClick={() => setOpen(false)}>Contact</Btn>
-
-              <button
-                onClick={() => {
-                  logout();
-                  setOpen(false);
-                }}
-                className="mt-auto text-red-600 font-semibold text-lg"
-              >
-                Logout
-              </button>
-            </div>
-          </>
-        )}
-      </nav>
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

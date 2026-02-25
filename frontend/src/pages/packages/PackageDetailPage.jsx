@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -8,10 +8,16 @@ import {
   Image as ImageIcon,
   Clock,
   Users,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import PackageCard from "../../components/Cards/PackagesCard.jsx";
 import PackageSkeleton from "../../components/Loader/PackageSkeleton.jsx";
+import DeleteConfirmModal from "../../components/adminDashboard/add-package/DeleteConfirmModal.jsx";
 import { getPackageById, getPackages } from "../../services/package.service.js";
+import { deletePackage } from "../../services/adminPackage.service.js";
+import { useAuth } from "../../context/useAuth.js";
+import { showToast } from "../../utils/toast.js";
 import FavouriteButton from "./components/FavouriteButton";
 import BookingButton from "./components/BookingButton";
 
@@ -30,11 +36,35 @@ function normalizeImages(pkg) {
 
 export default function PackageDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [pkg, setPkg] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeImage, setActiveImage] = useState(null);
+
+  // Admin delete state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    try {
+      setIsDeleting(true);
+      await deletePackage(id);
+      setShowDeleteModal(false);
+      showToast("Package deleted successfully", "success");
+      navigate("/packages");
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err.message ||
+          "Failed to delete package",
+        "error",
+      );
+      setIsDeleting(false);
+    }
+  }, [id, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,7 +170,7 @@ export default function PackageDetailPage() {
       className="min-h-screen bg-[#F8FAFC]"
     >
       {/* Top bar */}
-      <div className="max-w-7xl mx-auto px-6 pt-24 pb-6">
+      <div className="max-w-7xl mx-auto px-6 pt-24 pb-6 flex items-center justify-between">
         <Link
           to="/packages"
           className="inline-flex items-center gap-2 text-sm font-bold text-[#0A1A44] hover:text-[#0D9488] transition-colors"
@@ -148,6 +178,30 @@ export default function PackageDetailPage() {
           <ChevronLeft size={18} />
           Back to Packages
         </Link>
+
+        {/* Admin Actions */}
+        {user?.isAdmin && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(`/admin/package/${id}`)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold
+                         text-[#0D9488] border border-[#0D9488] rounded-lg
+                         hover:bg-[#0D9488] hover:text-white transition-colors duration-200"
+            >
+              <Pencil size={15} />
+              Edit
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold
+                         text-red-600 border border-red-300 rounded-lg
+                         hover:bg-red-600 hover:text-white transition-colors duration-200"
+            >
+              <Trash2 size={15} />
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="max-w-7xl mx-auto px-6 pb-16">
@@ -268,7 +322,7 @@ export default function PackageDetailPage() {
                 </p>
                 <p className="mt-2 font-semibold text-[#0A1A44] flex items-center gap-2">
                   <Clock size={16} className="text-[#0D9488]" />
-                  {pkg.duration || "—"}
+                  {pkg.durationDays/pkg.durationNights || "—"}
                 </p>
               </div>
               <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
@@ -332,6 +386,16 @@ export default function PackageDetailPage() {
           </div>
         </div>
       </div>
+      {/* Delete Confirm Modal (admin only) */}
+      {user?.isAdmin && (
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          isDeleting={isDeleting}
+          packageTitle={pkg?.title}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
     </motion.div>
   );
 }

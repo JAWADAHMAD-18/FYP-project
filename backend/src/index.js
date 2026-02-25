@@ -5,7 +5,7 @@ import { connectRedis } from "./config/redis.config.js";
 import http from "http"; // for creating server
 import { initSocket } from "./Sockets/index.js";
 // load environment variables from backend/.env (src is one level deeper)
-dotenv.config({ path: "../.env" });
+dotenv.config({ path: ".env" });
 
 const PORT = process.env.PORT || 4000;
 
@@ -34,16 +34,16 @@ const startServer = async () => {
     // Graceful shutdown
     const gracefulShutdown = async (signal) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`);
-      
+
       server.close(async () => {
         console.log("✅ HTTP server closed");
-        
+
         if (io) {
           io.close(() => {
             console.log("✅ Socket.IO server closed");
           });
         }
-        
+
         process.exit(0);
       });
 

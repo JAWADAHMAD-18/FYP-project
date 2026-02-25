@@ -1,4 +1,3 @@
-// TODO: Add CRUD operations for packages and booking and also to REMOVE REDIS CACHE
 import asyncHandler from "../utills/asynchandler.utills.js";
 import Package from "../models/packages.models.js";
 import Booking from "../models/booking.models.js";
@@ -6,6 +5,20 @@ import { ApiError } from "../utills/apiError.utills.js";
 import { ApiResponse } from "../utills/apiResponse.utills.js";
 import cloudinaryImageUpload from "../utills/cloudinary.utills.js";
 import { v2 as cloudinary } from "cloudinary";
+import { deleteCache, generateKey } from "../utills/localRedis.utills.js";
+
+// Invalidate package caches for listing and detail
+const invalidatePackageCaches = async (packageId) => {
+  await Promise.all([
+    deleteCache("packages:all"),
+    deleteCache("packages:active"),
+    deleteCache(generateKey("packages:type", "domestic")),
+    deleteCache(generateKey("packages:type", "international")),
+    ...(packageId
+      ? [deleteCache(generateKey("package:details", packageId))]
+      : []),
+  ]);
+};
 
 // Add a new package
 export const addPackage = asyncHandler(async (req, res) => {
@@ -33,6 +46,7 @@ export const addPackage = asyncHandler(async (req, res) => {
   }
   const imageUpload = await cloudinaryImageUpload(fileLocalPath);
   if (!imageUpload) {
+    console.error("Cloudinary upload failed for path:", fileLocalPath);
     throw new ApiError(400, "Failed to upload image on cloudinary");
   }
   const newPackage = await Package.create({
@@ -54,6 +68,10 @@ export const addPackage = asyncHandler(async (req, res) => {
     imagePublicId: imageUpload.public_id,
     createdBy: req.user._id,
   });
+
+  // Invalidate listing caches so /packages shows the new package
+  await invalidatePackageCaches();
+
   return res
     .status(201)
     .json(new ApiResponse(201, "Package added successfully", newPackage));
@@ -75,12 +93,15 @@ export const updatePackage = asyncHandler(async (req, res) => {
   if (req.file?.path) {
     const imageUpload = await cloudinaryImageUpload(req.file.path);
     if (!imageUpload) {
+      console.error(
+        "Cloudinary upload failed for update. Path:",
+        req.file.path
+      );
       throw new ApiError(400, "Failed to upload new image");
     }
     updates.image = imageUpload.url;
     updates.imagePublicId = imageUpload.public_id;
 
-    
     const oldPublicId = existingPackage.imagePublicId;
     if (oldPublicId) {
       try {
@@ -100,6 +121,9 @@ export const updatePackage = asyncHandler(async (req, res) => {
     { $set: updates },
     { new: true, runValidators: true }
   ).lean();
+
+  // Invalidate listing + detail caches
+  await invalidatePackageCaches(packageId);
 
   return res
     .status(200)
@@ -128,6 +152,9 @@ export const deletePackage = asyncHandler(async (req, res) => {
 
   // Delete the package
   await Package.findByIdAndDelete(packageId);
+
+  // Invalidate listing + detail caches
+  await invalidatePackageCaches(packageId);
 
   return res
     .status(200)

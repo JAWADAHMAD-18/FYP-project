@@ -98,8 +98,8 @@ export const createBooking = asyncHandler(async (req, res) => {
             pricePerPerson,
             totalPrice,
             savings,
-            start_date,
-            end_date,
+            start_date: pkg.start_date,
+            end_date: pkg.end_date,
             // travelDate is fixed from the package's start_date
             travelDate: pkg.start_date || null,
             notes: notes || null,

@@ -1,6 +1,5 @@
-import { MapPin, Clock, Users, Calendar, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Clock, Users, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/useAuth";
 
 const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -13,7 +12,6 @@ const formatDate = (dateString) => {
 
 const PackageCard = ({ packageData }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   return (
     <div
@@ -42,24 +40,6 @@ const PackageCard = ({ packageData }) => {
             >
               ● Available
             </span>
-          )}
-
-          {/* Admin Controls – top-left overlay */}
-          {user?.isAdmin && (
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/admin/package/${packageData._id}`);
-                }}
-                className="p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm
-                           hover:bg-teal-50 hover:text-teal-700 text-gray-600
-                           transition-colors duration-200"
-                title="Edit Package"
-              >
-                <Pencil size={14} />
-              </button>
-            </div>
           )}
         </div>
 
