@@ -322,7 +322,9 @@ export default function PackageDetailPage() {
                 </p>
                 <p className="mt-2 font-semibold text-[#0A1A44] flex items-center gap-2">
                   <Clock size={16} className="text-[#0D9488]" />
-                  {pkg.durationDays/pkg.durationNights || "—"}
+                  {pkg.durationDays
+                    ? `${pkg.durationDays}Days / ${pkg.durationNights ?? 0}Nights`
+                    : pkg.duration}
                 </p>
               </div>
               <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">

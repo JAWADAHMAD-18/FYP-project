@@ -85,7 +85,7 @@ const PackageCard = ({ packageData }) => {
                 <Clock size={16} style={{ color: "#0D9488" }} />
                 <span>
                   {packageData.durationDays
-                    ? `${packageData.durationDays}D / ${packageData.durationNights ?? 0}N`
+                    ? `${packageData.durationDays}Days / ${packageData.durationNights ?? 0}Nights`
                     : packageData.duration}
                 </span>
               </div>

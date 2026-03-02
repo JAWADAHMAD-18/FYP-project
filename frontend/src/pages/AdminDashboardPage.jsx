@@ -121,9 +121,9 @@ const AdminDashboardPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="text-xs text-gray-300 text-center mt-8"
+            className="text-md text-gray-800 text-center mt-4"
           >
-            Data generated at{" "}
+            Data generated at {" "}
             {new Date(data.generatedAt).toLocaleString("en-PK", {
               timeZone: "Asia/Karachi",
             })}
