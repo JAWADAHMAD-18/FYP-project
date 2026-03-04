@@ -1,15 +1,10 @@
-import NodeCache from "node-cache";
-
-const cache = new NodeCache({
-  stdTTL: 0, // Let TTL be always custom
-  checkperiod: 120,
-  useClones: false,
-});
+import { redisClient } from "../config/redis.config.js";
 
 export const TTL = {
   WEATHER: 1800, // 30 min
-  HOTELS: 86400, // 24 hr
-  FLIGHTS: 900, // 15 min
+  HOTELS: 3600, // 1 hour
+  FLIGHTS: 3600, // 1 hour
+  CITY: 86400, // 24 hr for city lookups
 };
 
 export const cacheKey = {
@@ -22,12 +17,47 @@ export const cacheKey = {
     `flights:${originCity}-${destinationCity}:${start}:${end}:${adults}`,
 };
 
+const isRedisReady = () => redisClient && redisClient.isOpen;
+
+const safeParse = (value) => {
+  if (value === null || value === undefined) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
 export const cacheService = {
-  get: cache.get.bind(cache),
-  set: cache.set.bind(cache),
-  delete: cache.del.bind(cache),
-  clear: cache.flushAll.bind(cache),
-  stats: cache.getStats.bind(cache),
+  get: async (key) => {
+    if (!isRedisReady()) return undefined;
+    const raw = await redisClient.get(key);
+    if (raw === null) return undefined;
+    return safeParse(raw);
+  },
+  set: async (key, value, ttlSeconds = TTL.WEATHER) => {
+    if (!isRedisReady()) return false;
+    await redisClient.setEx(key, ttlSeconds, JSON.stringify(value));
+    return true;
+  },
+  delete: async (key) => {
+    if (!isRedisReady()) return false;
+    await redisClient.del(key);
+    return true;
+  },
+  clear: async () => {
+    if (!isRedisReady()) return false;
+    // Namespace-aware clearing can be added later; for now no-op
+    return true;
+  },
+  stats: async () => {
+    // Basic stub for compatibility; real metrics can be added later
+    return {
+      keys: null,
+      hits: null,
+      misses: null,
+    };
+  },
 };
 
 // Wrapper to auto-cache function results
@@ -35,11 +65,18 @@ export const withCache = (fn, keyGenerator, ttl) => {
   return async (...args) => {
     const key = keyGenerator(...args) || JSON.stringify(args);
 
-    const cached = cache.get(key);
-    if (cached !== undefined) return cached; // No console.log → faster
+    if (isRedisReady()) {
+      const cachedRaw = await redisClient.get(key);
+      const cached = safeParse(cachedRaw);
+      if (cached !== null) {
+        return cached;
+      }
+    }
 
     const result = await fn(...args);
-    cache.set(key, result, ttl);
+    if (isRedisReady()) {
+      await redisClient.setEx(key, ttl, JSON.stringify(result));
+    }
     return result;
   };
 };

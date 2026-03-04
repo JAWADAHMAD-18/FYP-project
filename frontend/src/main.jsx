@@ -2,10 +2,12 @@ import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { AuthProvider } from "./context/AuthProvider.jsx";
+import { SupportChatProvider } from "./features/supportChat/context/SupportChatProvider.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 // Route-level code splitting to avoid loading all pages on first paint
 const App = lazy(() => import("./App.jsx"));
+const CustomPackagePage = lazy(() => import("./pages/CustomPackagePage.jsx"));
 const ProtectedRoute = lazy(() => import("./routes/ProtectedRoute.jsx"));
 const AdminProtectedRoute = lazy(
   () => import("./routes/AdminProtectedRoute.jsx"),
@@ -72,6 +74,10 @@ const router = createBrowserRouter([
         ],
       },
       // You can add more protected routes here
+      {
+        path: "custom-package",
+        element: <CustomPackagePage />,
+      },
     ],
   },
   // Routes outside App layout → no navbar/footer
@@ -88,9 +94,11 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-      <Suspense fallback={<div className="min-h-screen" />}>
-        <RouterProvider router={router} />
-      </Suspense>
+      <SupportChatProvider>
+        <Suspense fallback={<div className="min-h-screen" />}>
+          <RouterProvider router={router} />
+        </Suspense>
+      </SupportChatProvider>
     </AuthProvider>
   </StrictMode>,
 );

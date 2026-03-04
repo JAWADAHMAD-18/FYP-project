@@ -9,6 +9,51 @@ export default function registerChatHandlers(io, socket) {
     socket.join("admins");
   }
 
+  // JOIN EXISTING CONVERSATION ROOM (USER OR ADMIN)
+  socket.on("chat:join", async ({ conversationId }) => {
+    // Rate limiting check
+    if (socket.rateLimitCheck && !(await socket.rateLimitCheck())) {
+      return;
+    }
+
+    try {
+      // Validate conversationId format
+      if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) {
+        return socket.emit("chat:error", "Invalid conversation ID");
+      }
+
+      // Validate conversation access
+      const accessCheck = await ChatService.validateConversationAccess(
+        conversationId,
+        socket.user.id,
+        socket.user.isAdmin
+      );
+
+      if (!accessCheck.valid) {
+        return socket.emit("chat:error", accessCheck.error);
+      }
+
+      socket.join(`conversation:${conversationId}`);
+    } catch (err) {
+      // Sanitized error logging for production
+      if (process.env.NODE_ENV === "production") {
+        console.error(`[chat:join] Error:`, {
+          userId: socket.user.id,
+          conversationId,
+          error: err.message,
+        });
+      } else {
+        console.error(`[chat:join] Error:`, {
+          userId: socket.user.id,
+          conversationId,
+          error: err.message,
+          stack: err.stack,
+        });
+      }
+      socket.emit("chat:error", err.message || "Failed to join conversation");
+    }
+  });
+
   // START CHAT (USER)
   socket.on("chat:start", async () => {
     // Rate limiting check

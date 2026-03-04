@@ -10,7 +10,12 @@ class RealtimeChatController {
       );
       return ApiResponse.success(res, conversation);
     } catch (err) {
-      return next(new ApiError("Failed to start chat", 500));
+      // Log the real cause for debugging
+      // eslint-disable-next-line no-console
+      console.error("[RealtimeChatController.startChat] error:", err);
+      return next(
+        new ApiError(500, err?.message || "Failed to start chat")
+      );
     }
   }
 
@@ -24,16 +29,40 @@ class RealtimeChatController {
       });
       return ApiResponse.success(res, messages);
     } catch (err) {
-      return next(new ApiError("Failed to fetch messages", 500));
+      // eslint-disable-next-line no-console
+      console.error(
+        "[RealtimeChatController.getMessages] error:",
+        err
+      );
+      return next(
+        new ApiError(500, err?.message || "Failed to fetch messages")
+      );
     }
   }
 
   async getAdminConversations(req, res, next) {
     try {
+      // Ensure only authenticated admins can access this endpoint
+      if (!req.user) {
+        return next(new ApiError(401, "User not authenticated"));
+      }
+      if (!req.user.isAdmin) {
+        return next(
+          new ApiError(403, "Only admins can access conversations")
+        );
+      }
+
       const conversations = await ChatService.getAdminConversations();
       return ApiResponse.success(res, conversations);
     } catch (err) {
-      return next(new ApiError("Failed to fetch conversations", 500));
+      // eslint-disable-next-line no-console
+      console.error(
+        "[RealtimeChatController.getAdminConversations] error:",
+        err
+      );
+      return next(
+        new ApiError(500, err?.message || "Failed to fetch conversations")
+      );
     }
   }
 
@@ -50,7 +79,14 @@ class RealtimeChatController {
       );
       return ApiResponse.success(res, result);
     } catch (err) {
-      return next(new ApiError("Failed to fetch conversation", 500));
+      // eslint-disable-next-line no-console
+      console.error(
+        "[RealtimeChatController.getConversationWithMessages] error:",
+        err
+      );
+      return next(
+        new ApiError(500, err?.message || "Failed to fetch conversation")
+      );
     }
   }
 }
