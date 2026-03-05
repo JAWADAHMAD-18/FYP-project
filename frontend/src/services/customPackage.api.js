@@ -12,9 +12,7 @@ export const getCustomPackagePreview = async (data) => {
   };
 
   const res = await api.post("/preview", payload);
-  // The backend ApiResponse shape is:
-  //   { statusCode, data: "Custom package created successfully", message: { ...packageData }, success }
-  // `data` is the human-readable string; `message` holds the actual object.
+  
   const d = res.data;
   if (d?.message && typeof d.message === "object") return d.message;
   if (d?.data && typeof d.data === "object") return d.data;

@@ -4,6 +4,7 @@ import { useSupportChat } from "../context/useSupportChat";
 import ChatHeader from "./ChatHeader";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
+import TypingIndicator from "./TypingIndicator";
 
 function SupportChatWindow() {
   const {
@@ -15,6 +16,9 @@ function SupportChatWindow() {
     sendText,
     minimizeChat,
     lastError,
+    isOtherTyping,
+    otherTypingLabel,
+    handleTypingChange,
   } = useSupportChat();
 
   const endRef = useRef(null);
@@ -98,9 +102,14 @@ function SupportChatWindow() {
               )}
             </div>
 
+            {isOtherTyping && (
+              <TypingIndicator label={otherTypingLabel} />
+            )}
+
             <ChatInput
               onSend={sendText}
               disabled={!canType}
+               onChangeText={handleTypingChange}
               placeholder="Write to support…"
             />
           </div>

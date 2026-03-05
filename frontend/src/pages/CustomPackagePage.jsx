@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AlertTriangle, Plane, BedDouble, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/useAuth";
+import { useSupportChat } from "../features/supportChat/context/useSupportChat";
 import {
   getCustomPackagePreview,
   confirmCustomPackage,
@@ -50,6 +51,7 @@ const CustomPackagePage = () => {
   const { user } = useAuth();
   const isAuthenticated = Boolean(user);
   const navigate = useNavigate();
+  const { openChatWithMessage } = useSupportChat();
 
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -110,17 +112,35 @@ const CustomPackagePage = () => {
   // --------------------------------------------------------------------------
   const handleConfirm = useCallback(async () => {
     if (!preview || !isAuthenticated) return;
-    setLoading(true);
-    try {
-      const res = await confirmCustomPackage(preview);
-      const packageId = res.packageId || res._id;
-      navigate(`/chat/${packageId}`);
-    } catch (e) {
-      setError(e.message || "Failed to confirm package");
-    } finally {
-      setLoading(false);
-    }
-  }, [preview, isAuthenticated, navigate]);
+
+    const destinationName =
+      typeof preview?.destination === "string"
+        ? preview.destination
+        : preview?.destination?.name ?? "Selected destination";
+
+    const datesSummary =
+      preview?.start_date && preview?.end_date
+        ? `${preview.start_date} → ${preview.end_date}`
+        : "Dates not specified";
+
+    const travellers =
+      typeof preview?.adults === "number"
+        ? `${preview.adults} traveller${preview.adults === 1 ? "" : "s"}`
+        : "Travellers not specified";
+
+    const messageLines = [
+      "[PACKAGE_CONFIRMATION]",
+      `Destination: ${destinationName}`,
+      `Dates: ${datesSummary}`,
+      `Travellers: ${travellers}`,
+      "",
+      "Please review and confirm this custom package.",
+    ];
+
+    const autoMessage = messageLines.join("\n");
+
+    openChatWithMessage(autoMessage);
+  }, [isAuthenticated, openChatWithMessage, preview]);
 
   // --------------------------------------------------------------------------
   // Derived data — all sourced from the real backend shape

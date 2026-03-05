@@ -94,8 +94,12 @@ export function SupportChatProvider({ children }) {
     emitAccept,
     emitMessage,
     emitJoin,
+    emitTyping,
+    emitStopTyping,
     CONNECTION,
   } = useSupportSocket({ token: accessToken, enabled: socketEnabled });
+
+  const [typingByRoom, setTypingByRoom] = useState({});
 
   const clearUnread = useCallback((roomId) => {
     if (!roomId) return;
@@ -233,6 +237,31 @@ export function SupportChatProvider({ children }) {
     }
   }, [clearUnread, emitStart, isAdmin, isAuthenticated, loadAdminList]);
 
+  const openChatWithMessage = useCallback(
+    (text) => {
+      const trimmed = typeof text === "string" ? text.trim() : "";
+      if (!trimmed) return;
+      if (!isAuthenticated) return;
+
+      pendingAutoMessageRef.current = trimmed;
+
+      setIsOpen(true);
+      setIsMinimized(false);
+      setLastChatError(null);
+
+      if (!isAdmin) {
+        if (!uiRef.current.activeRoom) {
+          emitStart();
+        } else if (uiRef.current.activeRoom) {
+          clearUnread(uiRef.current.activeRoom);
+        }
+      } else {
+        loadAdminList();
+      }
+    },
+    [clearUnread, emitStart, isAdmin, isAuthenticated, loadAdminList]
+  );
+
   const minimizeChat = useCallback(() => {
     setIsMinimized(true);
   }, []);
@@ -298,6 +327,46 @@ export function SupportChatProvider({ children }) {
     [activeRoom, emitMessage, isAdmin]
   );
 
+  // Local typing debounce per active room
+  const typingControlRef = useRef({ isTyping: false, timeoutId: null });
+
+  const handleTypingChange = useCallback(
+    (text) => {
+      if (!activeRoom) return;
+      const trimmed = typeof text === "string" ? text.trim() : "";
+      const ctrl = typingControlRef.current;
+
+      if (!trimmed) {
+        if (ctrl.isTyping) {
+          emitStopTyping(activeRoom);
+          ctrl.isTyping = false;
+        }
+        if (ctrl.timeoutId) {
+          clearTimeout(ctrl.timeoutId);
+          ctrl.timeoutId = null;
+        }
+        return;
+      }
+
+      if (!ctrl.isTyping) {
+        emitTyping(activeRoom);
+        ctrl.isTyping = true;
+      }
+
+      if (ctrl.timeoutId) {
+        clearTimeout(ctrl.timeoutId);
+      }
+      ctrl.timeoutId = setTimeout(() => {
+        if (ctrl.isTyping) {
+          emitStopTyping(activeRoom);
+          ctrl.isTyping = false;
+        }
+        ctrl.timeoutId = null;
+      }, 2000);
+    },
+    [activeRoom, emitStopTyping, emitTyping]
+  );
+
   const saveScrollPosition = useCallback((roomId, scrollTop) => {
     if (!roomId) return;
     scrollPositionsRef.current.set(roomId, scrollTop);
@@ -338,6 +407,31 @@ export function SupportChatProvider({ children }) {
           loadAdminList();
         }
       },
+      onTyping: (payload) => {
+        const roomId = normalizeConversationId(payload?.conversationId);
+        const role = payload?.senderRole;
+        if (!roomId || !role) return;
+        setTypingByRoom((prev) => {
+          const current = prev?.[roomId] || { user: false, admin: false };
+          const next = { ...current };
+          if (role === "user") next.user = true;
+          if (role === "admin") next.admin = true;
+          return { ...(prev || {}), [roomId]: next };
+        });
+      },
+      onStopTyping: (payload) => {
+        const roomId = normalizeConversationId(payload?.conversationId);
+        const role = payload?.senderRole;
+        if (!roomId || !role) return;
+        setTypingByRoom((prev) => {
+          const current = prev?.[roomId];
+          if (!current) return prev || {};
+          const next = { ...current };
+          if (role === "user") next.user = false;
+          if (role === "admin") next.admin = false;
+          return { ...(prev || {}), [roomId]: next };
+        });
+      },
     });
   }, [appendMessage, clearUnread, loadAdminList, loadUserHistory, setHandlers]);
 
@@ -354,6 +448,16 @@ export function SupportChatProvider({ children }) {
     emitJoin(activeRoom);
     lastJoinedRoomRef.current = key;
   }, [activeRoom, connectionStatus, CONNECTION.connected, emitJoin, isAdmin]);
+
+  // Auto-send a queued message once a room becomes active
+  const pendingAutoMessageRef = useRef(null);
+  useEffect(() => {
+    if (!activeRoom) return;
+    const pending = pendingAutoMessageRef.current;
+    if (!pending) return;
+    pendingAutoMessageRef.current = null;
+    sendText(pending);
+  }, [activeRoom, sendText]);
 
   // Reset state on logout
   useEffect(() => {
@@ -394,8 +498,21 @@ export function SupportChatProvider({ children }) {
       CONNECTION,
       lastError: lastChatError || lastSocketError,
 
+      // Typing (for UI)
+      isOtherTyping:
+        activeRoom && typingByRoom
+          ? isAdmin
+            ? !!typingByRoom[activeRoom]?.user
+            : !!typingByRoom[activeRoom]?.admin
+          : false,
+      otherTypingLabel: isAdmin
+        ? "Traveler is typing…"
+        : "Support is typing…",
+
       // Actions
       openChat,
+      openChatWithMessage,
+      handleTypingChange,
       minimizeChat,
       maximizeChat,
       closeUi,
@@ -423,6 +540,8 @@ export function SupportChatProvider({ children }) {
       lastChatError,
       lastSocketError,
       openChat,
+      openChatWithMessage,
+      handleTypingChange,
       minimizeChat,
       maximizeChat,
       closeUi,
@@ -434,6 +553,7 @@ export function SupportChatProvider({ children }) {
       loadAdminRoom,
       saveScrollPosition,
       getScrollPosition,
+      typingByRoom,
     ]
   );
 

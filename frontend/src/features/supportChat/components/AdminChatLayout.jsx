@@ -5,6 +5,7 @@ import ChatHeader from "./ChatHeader";
 import UsersList from "./UsersList";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
+import TypingIndicator from "./TypingIndicator";
 
 function AdminChatLayout() {
   const {
@@ -24,6 +25,9 @@ function AdminChatLayout() {
     sendText,
     saveScrollPosition,
     getScrollPosition,
+    isOtherTyping,
+    otherTypingLabel,
+    handleTypingChange,
   } = useSupportChat();
 
   const listRef = useRef(null);
@@ -171,9 +175,14 @@ function AdminChatLayout() {
                       )}
                     </div>
 
+                    {isOtherTyping && (
+                      <TypingIndicator label={otherTypingLabel} />
+                    )}
+
                     <ChatInput
                       onSend={sendText}
                       disabled={!canType}
+                      onChangeText={handleTypingChange}
                       placeholder="Reply to the user…"
                     />
                   </>

@@ -9,6 +9,95 @@ export default function registerChatHandlers(io, socket) {
     socket.join("admins");
   }
 
+  // TYPING INDICATORS (USER OR ADMIN)
+  socket.on("chat:typing", async ({ conversationId }) => {
+    if (socket.rateLimitCheck && !(await socket.rateLimitCheck())) {
+      return;
+    }
+
+    try {
+      if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) {
+        return socket.emit("chat:error", "Invalid conversation ID");
+      }
+
+      const accessCheck = await ChatService.validateConversationAccess(
+        conversationId,
+        socket.user.id,
+        socket.user.isAdmin
+      );
+
+      if (!accessCheck.valid) {
+        return socket.emit("chat:error", accessCheck.error);
+      }
+
+      const senderRole = socket.user.isAdmin ? "admin" : "user";
+
+      io.to(`conversation:${conversationId}`).emit("chat:typing", {
+        conversationId,
+        senderRole,
+      });
+    } catch (err) {
+      if (process.env.NODE_ENV === "production") {
+        console.error(`[chat:typing] Error:`, {
+          userId: socket.user.id,
+          conversationId,
+          error: err.message,
+        });
+      } else {
+        console.error(`[chat:typing] Error:`, {
+          userId: socket.user.id,
+          conversationId,
+          error: err.message,
+          stack: err.stack,
+        });
+      }
+    }
+  });
+
+  socket.on("chat:stopTyping", async ({ conversationId }) => {
+    if (socket.rateLimitCheck && !(await socket.rateLimitCheck())) {
+      return;
+    }
+
+    try {
+      if (!conversationId || !mongoose.Types.ObjectId.isValid(conversationId)) {
+        return socket.emit("chat:error", "Invalid conversation ID");
+      }
+
+      const accessCheck = await ChatService.validateConversationAccess(
+        conversationId,
+        socket.user.id,
+        socket.user.isAdmin
+      );
+
+      if (!accessCheck.valid) {
+        return socket.emit("chat:error", accessCheck.error);
+      }
+
+      const senderRole = socket.user.isAdmin ? "admin" : "user";
+
+      io.to(`conversation:${conversationId}`).emit("chat:stopTyping", {
+        conversationId,
+        senderRole,
+      });
+    } catch (err) {
+      if (process.env.NODE_ENV === "production") {
+        console.error(`[chat:stopTyping] Error:`, {
+          userId: socket.user.id,
+          conversationId,
+          error: err.message,
+        });
+      } else {
+        console.error(`[chat:stopTyping] Error:`, {
+          userId: socket.user.id,
+          conversationId,
+          error: err.message,
+          stack: err.stack,
+        });
+      }
+    }
+  });
+
   // JOIN EXISTING CONVERSATION ROOM (USER OR ADMIN)
   socket.on("chat:join", async ({ conversationId }) => {
     // Rate limiting check

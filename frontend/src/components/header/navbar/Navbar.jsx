@@ -27,7 +27,7 @@ export default function Navbar() {
         {/* CENTER MENU (Desktop) */}
         <div className="hidden md:flex gap-8 text-lg font-medium items-center">
           {/* Always-visible Custom Package link */}
-          <NavLink
+          {/* <NavLink
             to="/custom-package"
             data-aos="fade-down"
             data-aos-duration="600"
@@ -41,7 +41,7 @@ export default function Navbar() {
             }
           >
             Custom Package
-          </NavLink>
+          </NavLink> */}
 
           {user && (
             <>
@@ -101,6 +101,21 @@ export default function Navbar() {
               )}
             </>
           )}
+          <NavLink
+            to="/custom-package"
+            data-aos="fade-down"
+            data-aos-duration="600"
+            data-aos-easing="linear"
+            className={({ isActive }) =>
+              `inline-block font-medium transition ${
+                isActive
+                  ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
+                  : "text-[#0A1A44] hover:text-teal-600"
+              }`
+            }
+          >
+            Custom Package
+          </NavLink>
         </div>
 
         {/* RIGHT MENU */}

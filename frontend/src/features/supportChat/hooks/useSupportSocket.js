@@ -31,6 +31,8 @@ export function useSupportSocket({ token, enabled }) {
     onSystem: null,
     onClosed: null,
     onConversationNew: null,
+    onTyping: null,
+    onStopTyping: null,
   });
 
   const setHandlers = useCallback((handlers) => {
@@ -60,6 +62,18 @@ export function useSupportSocket({ token, enabled }) {
     const s = socketRef.current;
     if (!s || !conversationId) return;
     s.emit("chat:join", { conversationId });
+  }, []);
+
+  const emitTyping = useCallback((conversationId) => {
+    const s = socketRef.current;
+    if (!s || !conversationId) return;
+    s.emit("chat:typing", { conversationId });
+  }, []);
+
+  const emitStopTyping = useCallback((conversationId) => {
+    const s = socketRef.current;
+    if (!s || !conversationId) return;
+    s.emit("chat:stopTyping", { conversationId });
   }, []);
 
   useEffect(() => {
@@ -147,6 +161,14 @@ export function useSupportSocket({ token, enabled }) {
       handlersRef.current.onConversationNew?.(payload);
     };
 
+    const onChatTyping = (payload) => {
+      handlersRef.current.onTyping?.(payload);
+    };
+
+    const onChatStopTyping = (payload) => {
+      handlersRef.current.onStopTyping?.(payload);
+    };
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("connect_error", onConnectError);
@@ -157,6 +179,8 @@ export function useSupportSocket({ token, enabled }) {
     socket.on("chat:system", onChatSystem);
     socket.on("chat:closed", onChatClosed);
     socket.on("conversation:new", onConversationNew);
+    socket.on("chat:typing", onChatTyping);
+    socket.on("chat:stopTyping", onChatStopTyping);
 
     return () => {
       socket.off("connect", onConnect);
@@ -168,6 +192,8 @@ export function useSupportSocket({ token, enabled }) {
       socket.off("chat:system", onChatSystem);
       socket.off("chat:closed", onChatClosed);
       socket.off("conversation:new", onConversationNew);
+      socket.off("chat:typing", onChatTyping);
+      socket.off("chat:stopTyping", onChatStopTyping);
       // Keep singleton socket alive for the single global provider; it will be
       // explicitly disconnected when auth token changes or provider unmounts.
     };
@@ -182,6 +208,8 @@ export function useSupportSocket({ token, enabled }) {
     emitAccept,
     emitMessage,
     emitJoin,
+    emitTyping,
+    emitStopTyping,
     CONNECTION,
   };
 }

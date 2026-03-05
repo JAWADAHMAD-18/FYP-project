@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { SendHorizonal } from "lucide-react";
 
-function ChatInput({ onSend, disabled, placeholder = "Type a message…" }) {
+function ChatInput({ onSend, disabled, placeholder = "Type a message…", onChangeText }) {
   const [text, setText] = useState("");
   const inputRef = useRef(null);
 
@@ -12,6 +12,7 @@ function ChatInput({ onSend, disabled, placeholder = "Type a message…" }) {
     if (!trimmed || disabled) return;
     onSend?.(trimmed);
     setText("");
+    onChangeText?.("");
     // Keep focus for quick follow-ups
     requestAnimationFrame(() => inputRef.current?.focus?.());
   };
@@ -35,7 +36,11 @@ function ChatInput({ onSend, disabled, placeholder = "Type a message…" }) {
           ref={inputRef}
           rows={1}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            const nextValue = e.target.value;
+            setText(nextValue);
+            onChangeText?.(nextValue);
+          }}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           className="flex-1 resize-none rounded-2xl border border-gray-200 focus:border-teal-600 focus:ring-4 focus:ring-teal-600/15 outline-none px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 max-h-32"
