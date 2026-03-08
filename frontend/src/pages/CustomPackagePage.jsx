@@ -7,6 +7,7 @@ import { useSupportChat } from "../features/supportChat/context/useSupportChat";
 import {
   getCustomPackagePreview,
   confirmCustomPackage,
+  setCustomPackageNegotiating,
 } from "../services/customPackage.api";
 import FormSection from "../components/customPackage/FormSection";
 import ProgressTracker from "../components/customPackage/ProgressTracker";
@@ -108,82 +109,49 @@ const CustomPackagePage = () => {
   );
 
   // --------------------------------------------------------------------------
-  // Confirm package — send compact structured payload for rich admin preview
+  // Confirm package — persist, set negotiating, send lightweight chat payload
   // --------------------------------------------------------------------------
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     if (!preview || !isAuthenticated) return;
 
-    // Keep payload small (< 5000 chars) — only include what the preview card needs.
-    const input = preview?.inputSnapshot ?? {};
-
-    const compactInputSnapshot = {
-      budgetPreference: input?.budgetPreference ?? input?.budget ?? null,
-      notes: input?.notes ?? input?.additionalNotes ?? null,
-    };
-
-    const packageDataBase = {
-      destination: preview?.destination ?? null,
-      destinationImage: preview?.destinationImage ?? null,
-      start_date: preview?.start_date ?? null,
-      end_date: preview?.end_date ?? null,
-      adults: preview?.adults ?? null,
-      inputSnapshot: compactInputSnapshot,
-      userSelectedFlightIds: Array.isArray(selectedFlights) ? selectedFlights : [],
-      userSelectedHotelIds: Array.isArray(selectedHotels) ? selectedHotels : [],
-    };
-
-    const payload = {
-      type: "PACKAGE_CONFIRMATION",
-      packageData: packageDataBase,
-    };
-
-    // Size guard: trim optional fields if needed
-    const safeStringify = (obj) => {
-      try {
-        return JSON.stringify(obj);
-      } catch {
-        return JSON.stringify({
-          type: "PACKAGE_CONFIRMATION",
-          packageData: {
-            destination: preview?.destination ?? null,
-            start_date: preview?.start_date ?? null,
-            end_date: preview?.end_date ?? null,
-            adults: preview?.adults ?? null,
-          },
-        });
-      }
-    };
-
-    let msg = safeStringify(payload);
-    if (msg.length > 4800) {
-      const trimmedPayload = {
-        ...payload,
-        packageData: {
-          ...packageDataBase,
-          inputSnapshot: {
-            ...compactInputSnapshot,
-            notes: null,
-          },
-        },
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Persist preview (get requestId)
+      const flightsSnapshot = preview?.flightsSnapshot ?? preview?.flights?.offers ?? [];
+      const hotelsSnapshot = preview?.hotelsSnapshot ?? preview?.destination?.hotels ?? [];
+      const toConfirm = {
+        ...preview,
+        selectedFlights: flightsSnapshot.filter((f) =>
+          selectedFlights.includes(f?.flightId ?? f?.id)
+        ),
+        selectedHotels: hotelsSnapshot.filter((h) =>
+          selectedHotels.includes(h?.hotelId ?? h?.id)
+        ),
       };
-      msg = safeStringify(trimmedPayload);
-    }
-    if (msg.length > 4800) {
-      const trimmedPayload2 = {
-        ...payload,
-        packageData: {
-          ...packageDataBase,
-          destinationImage: null,
-          inputSnapshot: {
-            ...compactInputSnapshot,
-            notes: null,
-          },
-        },
-      };
-      msg = safeStringify(trimmedPayload2);
-    }
+      const result = await confirmCustomPackage(toConfirm);
+      const requestId = result?.requestId ?? result?.packageId ?? preview?.requestId;
+      if (!requestId) throw new Error("Could not obtain requestId");
 
-    openChatWithMessage(msg);
+      // 2. Transition generated → negotiating
+      await setCustomPackageNegotiating(requestId);
+
+      // 3. Send lightweight PACKAGE_CONFIRMATION (no snapshots)
+      const lightweightPayload = {
+        type: "PACKAGE_CONFIRMATION",
+        requestId,
+        destination: preview?.destination?.name ?? preview?.destination ?? null,
+        travelers: preview?.adults ?? 1,
+        start_date: preview?.start_date ?? null,
+        end_date: preview?.end_date ?? null,
+        budgetPreference: preview?.inputSnapshot?.budgetPreference ?? null,
+      };
+      openChatWithMessage(JSON.stringify(lightweightPayload));
+    } catch (e) {
+      setError(e.message || "Failed to confirm package");
+    } finally {
+      setLoading(false);
+    }
   }, [isAuthenticated, openChatWithMessage, preview, selectedFlights, selectedHotels]);
 
   // --------------------------------------------------------------------------

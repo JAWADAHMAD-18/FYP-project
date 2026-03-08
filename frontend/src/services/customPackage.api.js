@@ -24,3 +24,25 @@ export const confirmCustomPackage = async (previewData) => {
   const res = await api.post("/confirm", { preview: previewData });
   return res.data?.data ?? res.data?.message ?? res.data;
 };
+
+export const setCustomPackageNegotiating = async (requestId) => {
+  const res = await api.patch("/status/negotiating", { requestId });
+  return res.data?.data ?? res.data;
+};
+
+export const getCustomPackageByRequestId = async (requestId) => {
+  const res = await api.get(`/admin/custom-package/${requestId}`);
+  return res.data?.data ?? res.data;
+};
+
+export const adminUpdateCustomPackageStatus = async (
+  requestId,
+  status,
+  finalSelection = {}
+) => {
+  const res = await api.patch(`/admin/custom-package/${requestId}/status`, {
+    status,
+    finalSelection,
+  });
+  return res.data?.data ?? res.data;
+};

@@ -535,3 +535,102 @@ export const confirmCustomPackage = async ({ userId, preview }) => {
   };
 };
 
+/**
+ * Update custom package status from "generated" to "negotiating" (user-initiated)
+ */
+export const updateCustomPackageStatusByRequestId = async ({
+  userId,
+  requestId,
+  nextStatus = "negotiating",
+}) => {
+  if (!requestId) {
+    throw new ApiError(400, "requestId is required");
+  }
+  if (nextStatus !== "negotiating") {
+    throw new ApiError(400, "Only transition to 'negotiating' is allowed");
+  }
+
+  const doc = await CustomizePackage.findOne({ userId, requestId });
+  if (!doc) {
+    throw new ApiError(404, "Custom package not found");
+  }
+  if (doc.status !== "generated") {
+    throw new ApiError(
+      400,
+      `Cannot transition from status '${doc.status}' to 'negotiating'`
+    );
+  }
+
+  doc.status = nextStatus;
+  await doc.save();
+
+  return {
+    requestId: doc.requestId,
+    status: doc.status,
+  };
+};
+
+/**
+ * Get full custom package by requestId (admin use)
+ */
+export const getCustomPackageByRequestId = async (requestId) => {
+  if (!requestId) {
+    throw new ApiError(400, "requestId is required");
+  }
+  const doc = await CustomizePackage.findOne({ requestId });
+  if (!doc) {
+    throw new ApiError(404, "Custom package not found");
+  }
+  return doc;
+};
+
+/**
+ * Admin update custom package status (finalized | cancelled)
+ */
+export const adminUpdateCustomPackageStatus = async ({
+  requestId,
+  nextStatus,
+  finalSelections = {},
+}) => {
+  if (!requestId) {
+    throw new ApiError(400, "requestId is required");
+  }
+  if (!["finalized", "cancelled"].includes(nextStatus)) {
+    throw new ApiError(400, "nextStatus must be 'finalized' or 'cancelled'");
+  }
+
+  const doc = await CustomizePackage.findOne({ requestId });
+  if (!doc) {
+    throw new ApiError(404, "Custom package not found");
+  }
+
+  if (nextStatus === "cancelled") {
+    doc.status = "cancelled";
+    await doc.save();
+    return { requestId: doc.requestId, status: doc.status };
+  }
+
+  // finalized
+  const { selectedFlights, selectedHotels } = finalSelections;
+  if (Array.isArray(selectedFlights) && selectedFlights.length > 0) {
+    doc.selectedFlights = selectedFlights;
+    doc.flightsSnapshot = doc.flightsSnapshot.filter((f) =>
+      selectedFlights.some(
+        (id) => String(id) === String(f?.id ?? f?._id ?? f?.flightId)
+      )
+    );
+  }
+  if (Array.isArray(selectedHotels) && selectedHotels.length > 0) {
+    doc.selectedHotels = selectedHotels;
+    doc.hotelsSnapshot = doc.hotelsSnapshot.filter((h) =>
+      selectedHotels.some(
+        (id) => String(id) === String(h?.id ?? h?._id ?? h?.hotelId)
+      )
+    );
+  }
+  doc.status = "finalized";
+  await doc.save();
+
+  return { requestId: doc.requestId, status: doc.status };
+};
+

@@ -24,6 +24,8 @@ function PackagePreviewCard({
   side = "left",
   onReply,
   onViewDetails,
+  onAccept,
+  onReject,
   createdAt,
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -38,10 +40,11 @@ function PackagePreviewCard({
     );
   }
 
+  const requestId = packageData?.requestId;
   const destination = resolveDestinationName(packageData?.destination);
   const startDate = formatDate(packageData?.start_date);
   const endDate = formatDate(packageData?.end_date);
-  const adults = packageData?.adults ?? "—";
+  const adults = packageData?.adults ?? packageData?.travelers ?? "—";
   const inputSnapshot = packageData?.inputSnapshot ?? {};
   const budget =
     inputSnapshot?.budgetPreference ?? inputSnapshot?.budget ?? "—";
@@ -118,6 +121,34 @@ function PackagePreviewCard({
         )}
 
         <div className="px-4 py-2.5 border-t border-gray-100 flex flex-wrap items-center gap-2 bg-gray-50/50">
+          {onViewDetails && requestId && (
+            <button
+              type="button"
+              onClick={() => onViewDetails(requestId)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-50 transition"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              View Package
+            </button>
+          )}
+          {onAccept && requestId && (
+            <button
+              type="button"
+              onClick={() => onAccept(requestId)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 transition"
+            >
+              Accept
+            </button>
+          )}
+          {onReject && requestId && (
+            <button
+              type="button"
+              onClick={() => onReject(requestId)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 transition"
+            >
+              Reject
+            </button>
+          )}
           {onReply && (
             <button
               type="button"
@@ -126,16 +157,6 @@ function PackagePreviewCard({
             >
               <MessageCircle className="w-3.5 h-3.5" />
               Reply
-            </button>
-          )}
-          {onViewDetails && (
-            <button
-              type="button"
-              onClick={onViewDetails}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-50 transition"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              View Details
             </button>
           )}
           <button

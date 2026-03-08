@@ -1,6 +1,7 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSupportChat } from "../context/useSupportChat";
+import { adminUpdateCustomPackageStatus } from "../../../services/customPackage.api";
 import ChatHeader from "./ChatHeader";
 import UsersList from "./UsersList";
 import MessageBubble from "./MessageBubble";
@@ -8,6 +9,12 @@ import ChatInput from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
 
 function AdminChatLayout() {
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    action: null,
+    requestId: null,
+    loading: false,
+  });
   const {
     isOpen,
     isMinimized,
@@ -52,6 +59,38 @@ function AdminChatLayout() {
     }
     await selectRoom(conversationId);
   };
+
+  const openConfirmModal = useCallback((action, requestId) => {
+    setConfirmModal({ open: true, action, requestId, loading: false });
+  }, []);
+
+  const handleConfirmModalConfirm = useCallback(async () => {
+    const { action, requestId } = confirmModal;
+    if (!requestId || !activeRoom) return;
+    setConfirmModal((p) => ({ ...p, loading: true }));
+    try {
+      if (action === "accept") {
+        await adminUpdateCustomPackageStatus(requestId, "finalized", {});
+        sendText(
+          "Your custom package has been approved. We've locked in the selected flights and hotels."
+        );
+      } else {
+        await adminUpdateCustomPackageStatus(requestId, "cancelled");
+        sendText(
+          "Your custom package request has been declined. Please reach out if you'd like to discuss alternatives."
+        );
+      }
+      setConfirmModal({ open: false, action: null, requestId: null, loading: false });
+    } catch (e) {
+      setConfirmModal((p) => ({ ...p, loading: false }));
+    }
+  }, [confirmModal.action, confirmModal.requestId, activeRoom, sendText]);
+
+  const handleConfirmModalCancel = useCallback(() => {
+    if (!confirmModal.loading) {
+      setConfirmModal({ open: false, action: null, requestId: null, loading: false });
+    }
+  }, [confirmModal.loading]);
 
   useEffect(() => {
     if (!shouldShow) return;
@@ -209,7 +248,16 @@ function AdminChatLayout() {
                               message={m}
                               side={m?.senderRole === "admin" ? "right" : "left"}
                               onReply={() => chatInputRef.current?.focus?.()}
-                              onViewDetails={() => window.open("/custom-package", "_blank")}
+                              onViewDetails={(requestId) => {
+                                window.location.href =
+                                  "/admin/custom-package/" + requestId;
+                              }}
+                              onAccept={(requestId) =>
+                                openConfirmModal("accept", requestId)
+                              }
+                              onReject={(requestId) =>
+                                openConfirmModal("reject", requestId)
+                              }
                             />
                           ))}
                           <div ref={endRef} />
@@ -242,6 +290,54 @@ function AdminChatLayout() {
               </div>
             </div>
           </div>
+
+          {/* Accept/Reject confirmation modal */}
+          {confirmModal.open && (
+            <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={confirmModal.loading ? undefined : handleConfirmModalCancel}
+              />
+              <div
+                role="alertdialog"
+                aria-modal="true"
+                className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
+              >
+                <h3 className="text-lg font-semibold text-[#0A1A44] mb-2">
+                  {confirmModal.action === "accept"
+                    ? "Accept custom package?"
+                    : "Reject custom package?"}
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  {confirmModal.action === "accept"
+                    ? "This will finalize the package and notify the user."
+                    : "This will cancel the request and notify the user."}
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleConfirmModalCancel}
+                    disabled={confirmModal.loading}
+                    className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmModalConfirm}
+                    disabled={confirmModal.loading}
+                    className={`px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-50 ${
+                      confirmModal.action === "accept"
+                        ? "bg-teal-600 hover:bg-teal-700"
+                        : "bg-red-600 hover:bg-red-700"
+                    }`}
+                  >
+                    {confirmModal.loading ? "Processing…" : confirmModal.action === "accept" ? "Accept" : "Reject"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

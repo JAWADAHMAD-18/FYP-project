@@ -3,9 +3,9 @@ import verifyAuth from "../middleware/auth.middleware.js";
 import {
   createCustomPackage as generateCustomPackagePreview,
   confirmCustomPackageController,
-  // getCustomPackageById,
-  // getUserCustomPackages,
-  // deleteCustomPackage,
+  setCustomPackageNegotiating,
+  adminGetCustomPackageByRequestId,
+  adminSetCustomPackageStatus,
 } from "../controllers/customPackage.controllers.js";
 
 const router = Router();
@@ -15,6 +15,23 @@ router.post("/preview", verifyAuth, generateCustomPackagePreview);
 
 // Confirm: persist a confirmed custom package
 router.post("/confirm", verifyAuth, confirmCustomPackageController);
+
+// User: transition generated → negotiating
+router.patch("/status/negotiating", verifyAuth, setCustomPackageNegotiating);
+
+// Admin: get full package by requestId
+router.get(
+  "/admin/custom-package/:requestId",
+  verifyAuth,
+  adminGetCustomPackageByRequestId
+);
+
+// Admin: update status (finalized | cancelled)
+router.patch(
+  "/admin/custom-package/:requestId/status",
+  verifyAuth,
+  adminSetCustomPackageStatus
+);
 
 // Get a single saved custom package by ID
 // router.get("/:id", verifyAuth, getCustomPackageById);

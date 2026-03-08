@@ -4,6 +4,9 @@ import { ApiError } from "../utills/apiError.utills.js";
 import {
   generateCustomPackage,
   confirmCustomPackage,
+  updateCustomPackageStatusByRequestId,
+  getCustomPackageByRequestId,
+  adminUpdateCustomPackageStatus,
 } from "../services/customPackage.service.js";
 
 export const createCustomPackage = asyncHandler(async (req, res) => {
@@ -74,4 +77,53 @@ export const confirmCustomPackageController = asyncHandler(
         )
       );
   }
+);
+
+export const setCustomPackageNegotiating = asyncHandler(async (req, res) => {
+  const userId = req.user?.id || req.user?._id;
+  if (!userId) {
+    throw new ApiError(401, "User authentication required");
+  }
+  const requestId = req.body?.requestId ?? req.params?.requestId;
+  if (!requestId) {
+    throw new ApiError(400, "requestId is required");
+  }
+  const result = await updateCustomPackageStatusByRequestId({
+    userId,
+    requestId,
+    nextStatus: "negotiating",
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Status updated to negotiating", result));
+});
+
+export const adminGetCustomPackageByRequestId = asyncHandler(
+  async (req, res) => {
+    if (!req.user?.isAdmin) {
+      throw new ApiError(403, "Admin access required");
+    }
+    const { requestId } = req.params;
+    const doc = await getCustomPackageByRequestId(requestId);
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Custom package retrieved", doc));
+  }
+);
+
+export const adminSetCustomPackageStatus = asyncHandler(async (req, res) => {
+  if (!req.user?.isAdmin) {
+    throw new ApiError(403, "Admin access required");
+  }
+  const { requestId } = req.params;
+  const { status, finalSelection } = req.body;
+  const result = await adminUpdateCustomPackageStatus({
+    requestId,
+    nextStatus: status,
+    finalSelections: finalSelection ?? {},
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Status updated", result));
+}
 );

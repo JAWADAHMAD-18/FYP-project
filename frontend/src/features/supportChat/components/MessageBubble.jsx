@@ -24,7 +24,14 @@ function parseRichPayload(text) {
   return null;
 }
 
-function MessageBubble({ message, side = "left", onReply, onViewDetails }) {
+function MessageBubble({
+  message,
+  side = "left",
+  onReply,
+  onViewDetails,
+  onAccept,
+  onReject,
+}) {
   const isSystem = message?.type === "system";
   const text = message?.text ?? "";
   const time = formatTime(message?.createdAt);
@@ -44,14 +51,26 @@ function MessageBubble({ message, side = "left", onReply, onViewDetails }) {
     parsed &&
     typeof parsed === "object" &&
     parsed.type === "PACKAGE_CONFIRMATION" &&
-    parsed.packageData
+    (parsed.packageData || parsed.requestId)
   ) {
+    const packageData = parsed.packageData ?? {
+      requestId: parsed.requestId,
+      destination: parsed.destination,
+      start_date: parsed.start_date,
+      end_date: parsed.end_date,
+      adults: parsed.travelers,
+      inputSnapshot: {
+        budgetPreference: parsed.budgetPreference,
+      },
+    };
     return (
       <PackagePreviewCard
-        packageData={parsed.packageData}
+        packageData={packageData}
         side={side}
         onReply={onReply}
         onViewDetails={onViewDetails}
+        onAccept={onAccept}
+        onReject={onReject}
         createdAt={message?.createdAt}
       />
     );
