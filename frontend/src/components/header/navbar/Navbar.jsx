@@ -7,7 +7,7 @@ import { useSupportChat } from "../../../features/supportChat/context/useSupport
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { openChat, totalUnread } = useSupportChat();
+  const { openChat, totalUnread, totalUnreadConversations } = useSupportChat();
   const [open, setOpen] = useState(false);
 
   const isAdmin = user?.isAdmin === true;
@@ -128,9 +128,9 @@ export default function Navbar() {
               aria-label="Open support inbox"
             >
               <Headset className="w-5 h-5" />
-              {totalUnread > 0 && (
+              {(totalUnreadConversations ?? 0) > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-teal-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-sm">
-                  {totalUnread > 99 ? "99+" : totalUnread}
+                  {(totalUnreadConversations ?? 0) > 99 ? "99+" : totalUnreadConversations}
                 </span>
               )}
             </button>
@@ -179,9 +179,9 @@ export default function Navbar() {
                   aria-label="Open support inbox"
                 >
                   <Headset className="w-5 h-5" />
-                  {totalUnread > 0 && (
+                  {(totalUnreadConversations ?? 0) > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-teal-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-sm">
-                      {totalUnread > 99 ? "99+" : totalUnread}
+                      {(totalUnreadConversations ?? 0) > 99 ? "99+" : totalUnreadConversations}
                     </span>
                   )}
                 </button>

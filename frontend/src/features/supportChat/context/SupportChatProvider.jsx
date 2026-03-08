@@ -22,16 +22,23 @@ function asArray(x) {
 function normalizeConversationId(conversationOrId) {
   if (!conversationOrId) return null;
   if (typeof conversationOrId === "string") return conversationOrId;
-  return conversationOrId?._id || conversationOrId?.conversationId || null;
+  const raw = conversationOrId?._id ?? conversationOrId?.conversationId ?? null;
+  return raw != null ? String(raw) : null;
+}
+
+/** Stable string key for room maps (unreadCounts, messagesByRoom). */
+function toRoomKey(id) {
+  if (id == null) return null;
+  return String(id);
 }
 
 function messageRoomId(message) {
-  return (
+  const raw =
     message?.conversation?.toString?.() ||
     message?.conversation ||
     message?.conversationId ||
-    null
-  );
+    null;
+  return raw != null ? String(raw) : null;
 }
 
 function formatLocalMessage({ conversationId, text, senderRole }) {
@@ -61,6 +68,8 @@ export function SupportChatProvider({ children }) {
   const [messagesByRoom, setMessagesByRoom] = useState({});
   const [unreadCounts, setUnreadCounts] = useState({});
   const [adminConversations, setAdminConversations] = useState([]);
+  const [lastActivityByRoom, setLastActivityByRoom] = useState({});
+  const [incomingNotification, setIncomingNotification] = useState(null);
 
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
   const [lastChatError, setLastChatError] = useState(null);
@@ -102,20 +111,22 @@ export function SupportChatProvider({ children }) {
   const [typingByRoom, setTypingByRoom] = useState({});
 
   const clearUnread = useCallback((roomId) => {
-    if (!roomId) return;
+    const key = toRoomKey(roomId);
+    if (!key) return;
     setUnreadCounts((prev) => {
-      if (!prev?.[roomId]) return prev;
+      if (!prev?.[key]) return prev;
       const next = { ...prev };
-      delete next[roomId];
+      delete next[key];
       return next;
     });
   }, []);
 
   const bumpUnread = useCallback((roomId) => {
-    if (!roomId) return;
+    const key = toRoomKey(roomId);
+    if (!key) return;
     setUnreadCounts((prev) => ({
       ...(prev || {}),
-      [roomId]: (prev?.[roomId] || 0) + 1,
+      [key]: (prev?.[key] || 0) + 1,
     }));
   }, []);
 
@@ -123,16 +134,17 @@ export function SupportChatProvider({ children }) {
     const roomId = messageRoomId(incoming);
     if (!roomId) return;
 
-    setMessagesByRoom((prev) => {
-      const existing = prev?.[roomId] || [];
+    const roomKey = toRoomKey(roomId);
+    setLastActivityByRoom((prev) => ({ ...(prev || {}), [roomKey]: Date.now() }));
 
-      // Deduplicate by Mongo _id.
+    setMessagesByRoom((prev) => {
+      const existing = prev?.[roomKey] || [];
+
       const incomingId = incoming?._id;
       if (incomingId && existing.some((m) => m?._id === incomingId)) {
         return prev;
       }
 
-      // If server echoes our own message, try to replace the optimistic local one.
       const maybeLocalIdx =
         incoming?.senderRole &&
         typeof incoming?.text === "string" &&
@@ -151,21 +163,36 @@ export function SupportChatProvider({ children }) {
         nextRoom = [...existing, incoming];
       }
 
-      return { ...(prev || {}), [roomId]: nextRoom };
+      return { ...(prev || {}), [roomKey]: nextRoom };
     });
 
     const { isOpen: openNow, isMinimized: minimizedNow, activeRoom: activeNow, isAdmin: adminNow } =
       uiRef.current;
+    const activeKey = toRoomKey(activeNow);
 
     const shouldCountUnread = adminNow
-      ? roomId !== activeNow
+      ? roomKey !== activeKey
       : !openNow || minimizedNow;
 
-    if (shouldCountUnread) bumpUnread(roomId);
+    if (shouldCountUnread) {
+      bumpUnread(roomKey);
+      if (adminNow && roomKey !== activeKey) {
+        const preview =
+          typeof incoming?.text === "string"
+            ? incoming.text.slice(0, 80)
+            : "New message";
+        setIncomingNotification({
+          roomId: roomKey,
+          preview: preview.length < (incoming?.text?.length ?? 0) ? `${preview}…` : preview,
+          at: Date.now(),
+        });
+      }
+    }
   }, [bumpUnread]);
 
   const loadUserHistory = useCallback(async (conversationId) => {
     if (!conversationId) return;
+    const key = toRoomKey(conversationId);
     setIsFetchingHistory(true);
     setLastChatError(null);
     try {
@@ -175,9 +202,9 @@ export function SupportChatProvider({ children }) {
       });
       setMessagesByRoom((prev) => ({
         ...(prev || {}),
-        [conversationId]: asArray(messages),
+        [key]: asArray(messages),
       }));
-      clearUnread(conversationId);
+      clearUnread(key);
     } catch (err) {
       setLastChatError(err?.message || "Failed to load chat history");
     } finally {
@@ -197,6 +224,7 @@ export function SupportChatProvider({ children }) {
 
   const loadAdminRoom = useCallback(async (conversationId) => {
     if (!conversationId) return;
+    const key = toRoomKey(conversationId);
     setIsFetchingHistory(true);
     setLastChatError(null);
     try {
@@ -207,9 +235,9 @@ export function SupportChatProvider({ children }) {
       const messages = asArray(result?.messages);
       setMessagesByRoom((prev) => ({
         ...(prev || {}),
-        [conversationId]: messages,
+        [key]: messages,
       }));
-      clearUnread(conversationId);
+      clearUnread(key);
     } catch (err) {
       setLastChatError(err?.message || "Failed to load conversation");
     } finally {
@@ -237,29 +265,54 @@ export function SupportChatProvider({ children }) {
     }
   }, [clearUnread, emitStart, isAdmin, isAuthenticated, loadAdminList]);
 
+  const sendText = useCallback(
+    (text) => {
+      const trimmed = typeof text === "string" ? text.trim() : "";
+      if (!trimmed) return;
+      if (!activeRoom) return;
+
+      const senderRole = isAdmin ? "admin" : "user";
+      const local = formatLocalMessage({
+        conversationId: activeRoom,
+        text: trimmed,
+        senderRole,
+      });
+
+      setMessagesByRoom((prev) => {
+        const existing = prev?.[activeRoom] || [];
+        return { ...(prev || {}), [activeRoom]: [...existing, local] };
+      });
+
+      emitMessage({ conversationId: activeRoom, text: trimmed });
+    },
+    [activeRoom, emitMessage, isAdmin]
+  );
+
   const openChatWithMessage = useCallback(
     (text) => {
       const trimmed = typeof text === "string" ? text.trim() : "";
       if (!trimmed) return;
       if (!isAuthenticated) return;
 
-      pendingAutoMessageRef.current = trimmed;
-
       setIsOpen(true);
       setIsMinimized(false);
       setLastChatError(null);
 
       if (!isAdmin) {
-        if (!uiRef.current.activeRoom) {
+        const currentRoom = uiRef.current.activeRoom;
+        if (currentRoom) {
+          // Room already active: send immediately so the effect (which only runs on activeRoom change) isn't relied on
+          sendText(trimmed);
+          clearUnread(currentRoom);
+        } else {
+          pendingAutoMessageRef.current = trimmed;
           emitStart();
-        } else if (uiRef.current.activeRoom) {
-          clearUnread(uiRef.current.activeRoom);
         }
       } else {
         loadAdminList();
       }
     },
-    [clearUnread, emitStart, isAdmin, isAuthenticated, loadAdminList]
+    [clearUnread, emitStart, isAdmin, isAuthenticated, loadAdminList, sendText]
   );
 
   const minimizeChat = useCallback(() => {
@@ -282,8 +335,12 @@ export function SupportChatProvider({ children }) {
       const id = normalizeConversationId(conversationId);
       if (!id) return;
 
-      setActiveRoom(id);
-      clearUnread(id);
+      const key = toRoomKey(id);
+      setActiveRoom(key);
+      clearUnread(key);
+      setIncomingNotification((prev) =>
+        prev?.roomId === key ? null : prev
+      );
 
       if (isAdmin) {
         emitJoin(id);
@@ -302,29 +359,6 @@ export function SupportChatProvider({ children }) {
       loadAdminList();
     },
     [emitAccept, loadAdminList]
-  );
-
-  const sendText = useCallback(
-    (text) => {
-      const trimmed = typeof text === "string" ? text.trim() : "";
-      if (!trimmed) return;
-      if (!activeRoom) return;
-
-      const senderRole = isAdmin ? "admin" : "user";
-      const local = formatLocalMessage({
-        conversationId: activeRoom,
-        text: trimmed,
-        senderRole,
-      });
-
-      setMessagesByRoom((prev) => {
-        const existing = prev?.[activeRoom] || [];
-        return { ...(prev || {}), [activeRoom]: [...existing, local] };
-      });
-
-      emitMessage({ conversationId: activeRoom, text: trimmed });
-    },
-    [activeRoom, emitMessage, isAdmin]
   );
 
   // Local typing debounce per active room
@@ -383,8 +417,9 @@ export function SupportChatProvider({ children }) {
       onReady: (conversation) => {
         const id = normalizeConversationId(conversation);
         if (!id) return;
-        setActiveRoom(id);
-        clearUnread(id);
+        const key = toRoomKey(id);
+        setActiveRoom(key);
+        clearUnread(key);
         loadUserHistory(id);
       },
       onMessage: (message) => appendMessage(message),
@@ -459,6 +494,13 @@ export function SupportChatProvider({ children }) {
     sendText(pending);
   }, [activeRoom, sendText]);
 
+  // Clear incoming notification when opening that room or after delay
+  useEffect(() => {
+    if (!incomingNotification) return;
+    const t = setTimeout(() => setIncomingNotification(null), 5000);
+    return () => clearTimeout(t);
+  }, [incomingNotification]);
+
   // Reset state on logout
   useEffect(() => {
     if (socketEnabled) return;
@@ -468,6 +510,8 @@ export function SupportChatProvider({ children }) {
     setMessagesByRoom({});
     setUnreadCounts({});
     setAdminConversations([]);
+    setLastActivityByRoom({});
+    setIncomingNotification(null);
     setIsFetchingHistory(false);
     setLastChatError(null);
     scrollPositionsRef.current.clear();
@@ -476,6 +520,24 @@ export function SupportChatProvider({ children }) {
   const totalUnread = useMemo(() => {
     return Object.values(unreadCounts || {}).reduce((sum, n) => sum + (n || 0), 0);
   }, [unreadCounts]);
+
+  const totalUnreadConversations = useMemo(() => {
+    return Object.entries(unreadCounts || {}).filter(
+      ([, n]) => (n || 0) > 0
+    ).length;
+  }, [unreadCounts]);
+
+  const sortedAdminConversations = useMemo(() => {
+    const list = asArray(adminConversations);
+    if (list.length <= 1) return list;
+    return [...list].sort((a, b) => {
+      const keyA = toRoomKey(a?._id);
+      const keyB = toRoomKey(b?._id);
+      const timeA = lastActivityByRoom?.[keyA] ?? new Date(a?.updatedAt || 0).getTime();
+      const timeB = lastActivityByRoom?.[keyB] ?? new Date(b?.updatedAt || 0).getTime();
+      return timeB - timeA;
+    });
+  }, [adminConversations, lastActivityByRoom]);
 
   const value = useMemo(
     () => ({
@@ -490,7 +552,11 @@ export function SupportChatProvider({ children }) {
       messagesByRoom,
       unreadCounts,
       totalUnread,
+      totalUnreadConversations,
       adminConversations,
+      sortedAdminConversations,
+      incomingNotification,
+      dismissIncomingNotification: () => setIncomingNotification(null),
 
       // Status
       isFetchingHistory,
@@ -533,7 +599,10 @@ export function SupportChatProvider({ children }) {
       messagesByRoom,
       unreadCounts,
       totalUnread,
+      totalUnreadConversations,
       adminConversations,
+      sortedAdminConversations,
+      incomingNotification,
       isFetchingHistory,
       connectionStatus,
       CONNECTION,

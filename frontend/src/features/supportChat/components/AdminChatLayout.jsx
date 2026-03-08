@@ -11,7 +11,7 @@ function AdminChatLayout() {
   const {
     isOpen,
     isMinimized,
-    adminConversations,
+    sortedAdminConversations,
     activeRoom,
     unreadCounts,
     messages,
@@ -28,16 +28,21 @@ function AdminChatLayout() {
     isOtherTyping,
     otherTypingLabel,
     handleTypingChange,
+    incomingNotification,
+    dismissIncomingNotification,
   } = useSupportChat();
 
   const listRef = useRef(null);
   const endRef = useRef(null);
+  const chatInputRef = useRef(null);
 
   const shouldShow = isOpen && !isMinimized;
 
   const activeConversation = useMemo(() => {
-    return (adminConversations || []).find((c) => c?._id === activeRoom) || null;
-  }, [adminConversations, activeRoom]);
+    return (sortedAdminConversations || []).find(
+      (c) => (c?._id != null ? String(c._id) : null) === activeRoom
+    ) || null;
+  }, [sortedAdminConversations, activeRoom]);
 
   const canType = connectionStatus === "connected" || connectionStatus === "connecting";
 
@@ -65,6 +70,14 @@ function AdminChatLayout() {
     endRef.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
   }, [messages?.length, shouldShow, isFetchingHistory]);
 
+  const notificationSenderName = useMemo(() => {
+    if (!incomingNotification?.roomId) return "Traveler";
+    const c = (sortedAdminConversations || []).find(
+      (conv) => String(conv?._id) === incomingNotification.roomId
+    );
+    return c?.user?.name || "Traveler";
+  }, [incomingNotification?.roomId, sortedAdminConversations]);
+
   return (
     <AnimatePresence>
       {shouldShow && (
@@ -75,6 +88,42 @@ function AdminChatLayout() {
           transition={{ duration: 0.22, ease: "easeOut" }}
           className="fixed z-[998] top-20 left-0 right-0 bottom-0 bg-white"
         >
+          {incomingNotification && (
+            <div
+              role="alert"
+              className="absolute top-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-10 rounded-xl border border-teal-200 bg-white shadow-lg p-4 flex items-start gap-3"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#0A1A44]">
+                  {notificationSenderName}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
+                  {incomingNotification.preview}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    selectRoom(incomingNotification.roomId);
+                    dismissIncomingNotification?.();
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700"
+                >
+                  Open
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissIncomingNotification}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="h-full flex flex-col border-t border-gray-100">
             <ChatHeader
               title="Support Inbox"
@@ -100,7 +149,7 @@ function AdminChatLayout() {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-[340px_1fr] min-h-0">
               <div className="border-r border-gray-100 min-h-0">
                 <UsersList
-                  conversations={adminConversations}
+                  conversations={sortedAdminConversations}
                   activeRoom={activeRoom}
                   unreadCounts={unreadCounts}
                   onSelect={handleSelect}
@@ -159,6 +208,8 @@ function AdminChatLayout() {
                               key={m?._id || `${m?.createdAt}-${m?.text}`}
                               message={m}
                               side={m?.senderRole === "admin" ? "right" : "left"}
+                              onReply={() => chatInputRef.current?.focus?.()}
+                              onViewDetails={() => window.open("/custom-package", "_blank")}
                             />
                           ))}
                           <div ref={endRef} />
@@ -184,6 +235,7 @@ function AdminChatLayout() {
                       disabled={!canType}
                       onChangeText={handleTypingChange}
                       placeholder="Reply to the user…"
+                      inputRef={chatInputRef}
                     />
                   </>
                 )}

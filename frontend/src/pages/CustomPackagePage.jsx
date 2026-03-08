@@ -108,39 +108,83 @@ const CustomPackagePage = () => {
   );
 
   // --------------------------------------------------------------------------
-  // Confirm package
+  // Confirm package — send compact structured payload for rich admin preview
   // --------------------------------------------------------------------------
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = useCallback(() => {
     if (!preview || !isAuthenticated) return;
 
-    const destinationName =
-      typeof preview?.destination === "string"
-        ? preview.destination
-        : preview?.destination?.name ?? "Selected destination";
+    // Keep payload small (< 5000 chars) — only include what the preview card needs.
+    const input = preview?.inputSnapshot ?? {};
 
-    const datesSummary =
-      preview?.start_date && preview?.end_date
-        ? `${preview.start_date} → ${preview.end_date}`
-        : "Dates not specified";
+    const compactInputSnapshot = {
+      budgetPreference: input?.budgetPreference ?? input?.budget ?? null,
+      notes: input?.notes ?? input?.additionalNotes ?? null,
+    };
 
-    const travellers =
-      typeof preview?.adults === "number"
-        ? `${preview.adults} traveller${preview.adults === 1 ? "" : "s"}`
-        : "Travellers not specified";
+    const packageDataBase = {
+      destination: preview?.destination ?? null,
+      destinationImage: preview?.destinationImage ?? null,
+      start_date: preview?.start_date ?? null,
+      end_date: preview?.end_date ?? null,
+      adults: preview?.adults ?? null,
+      inputSnapshot: compactInputSnapshot,
+      userSelectedFlightIds: Array.isArray(selectedFlights) ? selectedFlights : [],
+      userSelectedHotelIds: Array.isArray(selectedHotels) ? selectedHotels : [],
+    };
 
-    const messageLines = [
-      "[PACKAGE_CONFIRMATION]",
-      `Destination: ${destinationName}`,
-      `Dates: ${datesSummary}`,
-      `Travellers: ${travellers}`,
-      "",
-      "Please review and confirm this custom package.",
-    ];
+    const payload = {
+      type: "PACKAGE_CONFIRMATION",
+      packageData: packageDataBase,
+    };
 
-    const autoMessage = messageLines.join("\n");
+    // Size guard: trim optional fields if needed
+    const safeStringify = (obj) => {
+      try {
+        return JSON.stringify(obj);
+      } catch {
+        return JSON.stringify({
+          type: "PACKAGE_CONFIRMATION",
+          packageData: {
+            destination: preview?.destination ?? null,
+            start_date: preview?.start_date ?? null,
+            end_date: preview?.end_date ?? null,
+            adults: preview?.adults ?? null,
+          },
+        });
+      }
+    };
 
-    openChatWithMessage(autoMessage);
-  }, [isAuthenticated, openChatWithMessage, preview]);
+    let msg = safeStringify(payload);
+    if (msg.length > 4800) {
+      const trimmedPayload = {
+        ...payload,
+        packageData: {
+          ...packageDataBase,
+          inputSnapshot: {
+            ...compactInputSnapshot,
+            notes: null,
+          },
+        },
+      };
+      msg = safeStringify(trimmedPayload);
+    }
+    if (msg.length > 4800) {
+      const trimmedPayload2 = {
+        ...payload,
+        packageData: {
+          ...packageDataBase,
+          destinationImage: null,
+          inputSnapshot: {
+            ...compactInputSnapshot,
+            notes: null,
+          },
+        },
+      };
+      msg = safeStringify(trimmedPayload2);
+    }
+
+    openChatWithMessage(msg);
+  }, [isAuthenticated, openChatWithMessage, preview, selectedFlights, selectedHotels]);
 
   // --------------------------------------------------------------------------
   // Derived data — all sourced from the real backend shape

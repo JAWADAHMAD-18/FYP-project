@@ -275,6 +275,8 @@ export default function registerChatHandlers(io, socket) {
       });
 
       io.to(`conversation:${conversationId}`).emit("chat:message", message);
+      // Notify all admins so unread counts and toasts work even when admin hasn't joined that conversation yet
+      io.to("admins").emit("chat:message", message);
     } catch (err) {
       // Sanitized error logging for production
       if (process.env.NODE_ENV === "production") {

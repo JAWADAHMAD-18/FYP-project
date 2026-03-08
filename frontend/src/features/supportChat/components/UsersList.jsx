@@ -35,9 +35,11 @@ function UsersList({ conversations, activeRoom, unreadCounts, onSelect }) {
           </div>
         ) : (
           list.map((c) => {
-            const id = c?._id;
+            const rawId = c?._id;
+            const id = rawId != null ? String(rawId) : null;
             const isActive = id && id === activeRoom;
-            const unread = (id && unreadCounts?.[id]) || 0;
+            const unread = id ? (unreadCounts?.[id] || 0) : 0;
+            const hasUnread = unread > 0;
             const name = c?.user?.name || "User";
             const email = c?.user?.email || "";
             const status = c?.status;
@@ -46,9 +48,9 @@ function UsersList({ conversations, activeRoom, unreadCounts, onSelect }) {
               <button
                 key={id}
                 onClick={() => id && onSelect?.(id)}
-                className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition ${
-                  isActive ? "bg-teal-600/5" : ""
-                }`}
+                className={`w-full text-left px-4 py-3 transition border-l-4 ${
+                  isActive ? "bg-teal-600/5 border-teal-600" : "border-transparent"
+                } ${hasUnread ? "bg-teal-50/80 hover:bg-teal-50" : "hover:bg-gray-50"}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

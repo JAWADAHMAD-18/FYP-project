@@ -1,9 +1,10 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { SendHorizonal } from "lucide-react";
 
-function ChatInput({ onSend, disabled, placeholder = "Type a message…", onChangeText }) {
+function ChatInput({ onSend, disabled, placeholder = "Type a message…", onChangeText, inputRef: externalInputRef }) {
   const [text, setText] = useState("");
-  const inputRef = useRef(null);
+  const internalRef = useRef(null);
+  const inputRef = externalInputRef ?? internalRef;
 
   const canSend = useMemo(() => !disabled && text.trim().length > 0, [disabled, text]);
 

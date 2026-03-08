@@ -1,4 +1,5 @@
 import { memo } from "react";
+import PackagePreviewCard from "./PackagePreviewCard";
 
 function formatTime(iso) {
   if (!iso) return "";
@@ -7,9 +8,25 @@ function formatTime(iso) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function MessageBubble({ message, side = "left" }) {
+function parseRichPayload(text) {
+  if (typeof text !== "string" || !text.trim()) return null;
+  const trimmed = text.trim();
+  if (
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]"))
+  ) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function MessageBubble({ message, side = "left", onReply, onViewDetails }) {
   const isSystem = message?.type === "system";
-  const text = message?.text || "";
+  const text = message?.text ?? "";
   const time = formatTime(message?.createdAt);
 
   if (isSystem) {
@@ -19,6 +36,24 @@ function MessageBubble({ message, side = "left" }) {
           {text}
         </div>
       </div>
+    );
+  }
+
+  const parsed = parseRichPayload(text);
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    parsed.type === "PACKAGE_CONFIRMATION" &&
+    parsed.packageData
+  ) {
+    return (
+      <PackagePreviewCard
+        packageData={parsed.packageData}
+        side={side}
+        onReply={onReply}
+        onViewDetails={onViewDetails}
+        createdAt={message?.createdAt}
+      />
     );
   }
 
