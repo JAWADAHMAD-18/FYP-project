@@ -571,13 +571,16 @@ export const updateCustomPackageStatusByRequestId = async ({
 };
 
 /**
- * Get full custom package by requestId (admin use)
+ * Get full custom package by requestId (admin use).
+ * If multiple docs share the same requestId, returns the most recent by createdAt.
  */
 export const getCustomPackageByRequestId = async (requestId) => {
   if (!requestId) {
     throw new ApiError(400, "requestId is required");
   }
-  const doc = await CustomizePackage.findOne({ requestId });
+  const doc = await CustomizePackage.findOne({ requestId })
+    .sort({ createdAt: -1 })
+    .lean();
   if (!doc) {
     throw new ApiError(404, "Custom package not found");
   }

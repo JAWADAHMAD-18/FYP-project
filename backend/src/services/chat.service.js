@@ -159,7 +159,7 @@ class ChatService {
     }
   }
 
-  // CLOSE CONVERSATION
+  // RELEASE/CLOSE CONVERSATION (unassign admin, make available for others)
   async closeConversation(conversationId, admin) {
     const conversation = await Conversation.findById(conversationId);
 
@@ -167,7 +167,15 @@ class ChatService {
 
     if (!admin.isAdmin) throw new Error("Only admin can close chat");
 
-    conversation.status = "closed";
+    // Only the assigned admin can release the conversation
+    const assignedId = conversation.assignedAdmin?.toString?.() ?? conversation.assignedAdmin;
+    if (assignedId && assignedId !== admin.id) {
+      throw new Error("Only the assigned admin can close this chat");
+    }
+
+    // Release: unassign admin and set status back to open so other admins can accept
+    conversation.assignedAdmin = null;
+    conversation.status = "open";
     await conversation.save();
 
     return conversation;

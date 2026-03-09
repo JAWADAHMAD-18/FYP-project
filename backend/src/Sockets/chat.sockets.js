@@ -313,13 +313,19 @@ export default function registerChatHandlers(io, socket) {
         return socket.emit("chat:error", "Invalid conversation ID");
       }
 
-      await ChatService.closeConversation(conversationId, socket.user);
+      const conversation = await ChatService.closeConversation(
+        conversationId,
+        socket.user
+      );
 
-      // Notify conversation participants
+      // Notify conversation participants (user sees system message)
       io.to(`conversation:${conversationId}`).emit("chat:closed", {
         conversationId,
         closedBy: socket.user.id,
       });
+
+      // Notify all admins so they see the conversation is available again
+      io.to("admins").emit("conversation:released", { conversationId });
     } catch (err) {
       // Sanitized error logging for production
       if (process.env.NODE_ENV === "production") {

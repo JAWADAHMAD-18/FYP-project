@@ -134,20 +134,28 @@ const AdminCustomPackagePage = () => {
                   Flights
                 </h2>
                 <div className="space-y-3">
-                  {flights.map((f, i) => (
-                    <div
-                      key={f?.flightId ?? i}
-                      className="p-4 rounded-xl border border-gray-100 bg-gray-50/50"
-                    >
-                      <p className="font-medium text-[#0A1A44]">
-                        {f?.origin ?? "—"} → {f?.destination ?? f?.arrival ?? "—"}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {f?.airline ?? f?.carrier ?? "—"} •{" "}
-                        {f?.price ? `$${f.price}` : "—"}
-                      </p>
-                    </div>
-                  ))}
+                  {flights.map((f, i) => {
+                    const price =
+                      typeof f?.price === "object" && f?.price?.total
+                        ? `${f.price.currency ?? "USD"} ${f.price.total}`
+                        : typeof f?.price === "number" || typeof f?.price === "string"
+                          ? String(f.price)
+                          : "—";
+                    return (
+                      <div
+                        key={f?.flightId ?? i}
+                        className="p-4 rounded-xl border border-gray-100 bg-gray-50/50"
+                      >
+                        <p className="font-medium text-[#0A1A44]">
+                          {f?.airline ?? f?.carrier ?? "Flight"} • {price}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {f?.duration ? String(f.duration).replace(/^PT/, "") : ""}
+                          {f?.stops != null ? ` • ${f.stops} stop${f.stops !== 1 ? "s" : ""}` : ""}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -159,19 +167,25 @@ const AdminCustomPackagePage = () => {
                   Hotels
                 </h2>
                 <div className="space-y-3">
-                  {hotels.map((h, i) => (
-                    <div
-                      key={h?.hotelId ?? i}
-                      className="p-4 rounded-xl border border-gray-100 bg-gray-50/50"
-                    >
-                      <p className="font-medium text-[#0A1A44]">
-                        {h?.name ?? h?.hotelName ?? "—"}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {h?.price ? `$${h.price}/night` : "—"}
-                      </p>
-                    </div>
-                  ))}
+                  {hotels.map((h, i) => {
+                    const priceStr =
+                      typeof h?.price === "object" && h?.price?.total
+                        ? `${h.price.currency ?? "EUR"} ${h.price.total}/night`
+                        : h?.price
+                          ? `${h.price}/night`
+                          : "—";
+                    return (
+                      <div
+                        key={h?.hotelId ?? i}
+                        className="p-4 rounded-xl border border-gray-100 bg-gray-50/50"
+                      >
+                        <p className="font-medium text-[#0A1A44]">
+                          {h?.name ?? h?.hotelName ?? "—"}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">{priceStr}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -181,18 +195,26 @@ const AdminCustomPackagePage = () => {
                 <h2 className="flex items-center gap-2 text-lg font-bold text-[#0A1A44] mb-4 border-l-4 border-teal-600 pl-3">
                   Itinerary
                 </h2>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {itinerary.map((item, i) => (
                     <li
                       key={i}
-                      className="flex gap-3 p-3 rounded-lg bg-gray-50/50 border border-gray-100"
+                      className="p-4 rounded-lg bg-gray-50/50 border border-gray-100"
                     >
-                      <span className="text-teal-600 font-semibold shrink-0">
-                        Day {item?.day ?? i + 1}
-                      </span>
-                      <span className="text-gray-700">
-                        {item?.description ?? item?.activity ?? JSON.stringify(item)}
-                      </span>
+                      <p className="text-teal-600 font-semibold mb-2">
+                        Day {item?.day ?? i + 1}: {item?.title ?? "—"}
+                      </p>
+                      {Array.isArray(item?.activities) ? (
+                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                          {item.activities.map((act, j) => (
+                            <li key={j}>{act}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-gray-700 text-sm">
+                          {item?.description ?? item?.activity ?? "—"}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

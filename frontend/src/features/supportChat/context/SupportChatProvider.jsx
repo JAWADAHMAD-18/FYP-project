@@ -101,6 +101,7 @@ export function SupportChatProvider({ children }) {
     setHandlers,
     emitStart,
     emitAccept,
+    emitClose,
     emitMessage,
     emitJoin,
     emitTyping,
@@ -361,6 +362,16 @@ export function SupportChatProvider({ children }) {
     [emitAccept, loadAdminList]
   );
 
+  const closeRoom = useCallback(
+    async (conversationId) => {
+      const id = normalizeConversationId(conversationId);
+      if (!id) return;
+      emitClose(id);
+      loadAdminList();
+    },
+    [emitClose, loadAdminList]
+  );
+
   // Local typing debounce per active room
   const typingControlRef = useRef({ isTyping: false, timeoutId: null });
 
@@ -432,12 +443,17 @@ export function SupportChatProvider({ children }) {
           conversation: id,
           senderRole: "admin",
           type: "system",
-          text: "This conversation has been closed by support.",
+          text: "Support has ended this session. You can send a new message anytime to get help again.",
           createdAt: nowIso(),
           updatedAt: nowIso(),
         });
       },
       onConversationNew: () => {
+        if (uiRef.current.isAdmin) {
+          loadAdminList();
+        }
+      },
+      onConversationReleased: () => {
         if (uiRef.current.isAdmin) {
           loadAdminList();
         }
@@ -584,6 +600,7 @@ export function SupportChatProvider({ children }) {
       closeUi,
       selectRoom,
       acceptRoom,
+      closeRoom,
       sendText,
       clearUnread,
       loadAdminList,
@@ -616,6 +633,7 @@ export function SupportChatProvider({ children }) {
       closeUi,
       selectRoom,
       acceptRoom,
+      closeRoom,
       sendText,
       clearUnread,
       loadAdminList,

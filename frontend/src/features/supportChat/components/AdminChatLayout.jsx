@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSupportChat } from "../context/useSupportChat";
+import { useAuth } from "../../../context/useAuth";
 import { adminUpdateCustomPackageStatus } from "../../../services/customPackage.api";
 import ChatHeader from "./ChatHeader";
 import UsersList from "./UsersList";
@@ -15,6 +16,7 @@ function AdminChatLayout() {
     requestId: null,
     loading: false,
   });
+  const { user } = useAuth();
   const {
     isOpen,
     isMinimized,
@@ -29,6 +31,7 @@ function AdminChatLayout() {
     minimizeChat,
     selectRoom,
     acceptRoom,
+    closeRoom,
     sendText,
     saveScrollPosition,
     getScrollPosition,
@@ -226,6 +229,16 @@ function AdminChatLayout() {
                           className="shrink-0 px-3 py-2 rounded-xl bg-teal-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition"
                         >
                           Accept
+                        </button>
+                      ) : null}
+                      {activeConversation?.status === "assigned" &&
+                      String(activeConversation?.assignedAdmin) ===
+                        String(user?._id || user?.id) ? (
+                        <button
+                          onClick={() => closeRoom(activeRoom)}
+                          className="shrink-0 px-3 py-2 rounded-xl border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
+                        >
+                          Close Chat
                         </button>
                       ) : null}
                     </div>

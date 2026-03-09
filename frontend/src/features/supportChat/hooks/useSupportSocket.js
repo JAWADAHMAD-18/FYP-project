@@ -31,6 +31,7 @@ export function useSupportSocket({ token, enabled }) {
     onSystem: null,
     onClosed: null,
     onConversationNew: null,
+    onConversationReleased: null,
     onTyping: null,
     onStopTyping: null,
   });
@@ -50,6 +51,12 @@ export function useSupportSocket({ token, enabled }) {
     const s = socketRef.current;
     if (!s || !conversationId) return;
     s.emit("chat:accept", { conversationId });
+  }, []);
+
+  const emitClose = useCallback((conversationId) => {
+    const s = socketRef.current;
+    if (!s || !conversationId) return;
+    s.emit("chat:close", { conversationId });
   }, []);
 
   const emitMessage = useCallback(({ conversationId, text }) => {
@@ -161,6 +168,10 @@ export function useSupportSocket({ token, enabled }) {
       handlersRef.current.onConversationNew?.(payload);
     };
 
+    const onConversationReleased = (payload) => {
+      handlersRef.current.onConversationReleased?.(payload);
+    };
+
     const onChatTyping = (payload) => {
       handlersRef.current.onTyping?.(payload);
     };
@@ -179,6 +190,7 @@ export function useSupportSocket({ token, enabled }) {
     socket.on("chat:system", onChatSystem);
     socket.on("chat:closed", onChatClosed);
     socket.on("conversation:new", onConversationNew);
+    socket.on("conversation:released", onConversationReleased);
     socket.on("chat:typing", onChatTyping);
     socket.on("chat:stopTyping", onChatStopTyping);
 
@@ -192,6 +204,7 @@ export function useSupportSocket({ token, enabled }) {
       socket.off("chat:system", onChatSystem);
       socket.off("chat:closed", onChatClosed);
       socket.off("conversation:new", onConversationNew);
+      socket.off("conversation:released", onConversationReleased);
       socket.off("chat:typing", onChatTyping);
       socket.off("chat:stopTyping", onChatStopTyping);
       // Keep singleton socket alive for the single global provider; it will be
@@ -206,6 +219,7 @@ export function useSupportSocket({ token, enabled }) {
     setHandlers,
     emitStart,
     emitAccept,
+    emitClose,
     emitMessage,
     emitJoin,
     emitTyping,

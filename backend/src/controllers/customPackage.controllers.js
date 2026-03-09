@@ -107,7 +107,7 @@ export const adminGetCustomPackageByRequestId = asyncHandler(
     const doc = await getCustomPackageByRequestId(requestId);
     return res
       .status(200)
-      .json(new ApiResponse(200, "Custom package retrieved", doc));
+      .json(new ApiResponse(200, doc, "Custom package retrieved"));
   }
 );
 
