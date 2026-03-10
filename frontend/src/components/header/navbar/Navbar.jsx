@@ -102,6 +102,21 @@ export default function Navbar() {
             </>
           )}
           <NavLink
+            to="/about"
+            data-aos="fade-down"
+            data-aos-duration="600"
+            data-aos-easing="linear"
+            className={({ isActive }) =>
+              `inline-block font-medium transition ${
+                isActive
+                  ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
+                  : "text-[#0A1A44] hover:text-teal-600"
+              }`
+            }
+          >
+            About
+          </NavLink>
+          <NavLink
             to="/custom-package"
             data-aos="fade-down"
             data-aos-duration="600"
@@ -214,6 +229,19 @@ export default function Navbar() {
         <div className="md:hidden absolute top-20 left-0 w-full bg-white shadow-lg border-t border-gray-100 z-30">
           <div className="flex flex-col px-6 py-4 gap-4 text-lg font-medium">
             {/* Always-visible Custom Package */}
+            <NavLink
+              to="/about"
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `inline-block font-medium transition ${
+                  isActive
+                    ? "text-teal-600 font-semibold"
+                    : "text-[#0A1A44] hover:text-teal-600"
+                }`
+              }
+            >
+              About
+            </NavLink>
             <NavLink
               to="/custom-package"
               onClick={() => setOpen(false)}

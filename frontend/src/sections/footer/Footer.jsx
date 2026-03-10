@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   FaWhatsapp,
   FaFacebookF,
@@ -80,9 +81,9 @@ const Footer = () => {
             <h4 className="text-lg font-bold mb-4">Information</h4>
             <ul className="space-y-4 text-gray-400">
               <li>
-                <a href="#" className="hover:text-blue-400 transition-colors">
+                <Link to="/about" className="hover:text-blue-400 transition-colors">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="hover:text-blue-400 transition-colors">

@@ -26,6 +26,7 @@ const AddPackagePage = lazy(() => import("./pages/AddPackage.jsx"));
 const AdminCustomPackagePage = lazy(
   () => import("./pages/admin/AdminCustomPackagePage.jsx"),
 );
+const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
 
 const router = createBrowserRouter([
   {
@@ -84,6 +85,10 @@ const router = createBrowserRouter([
       {
         path: "custom-package",
         element: <CustomPackagePage />,
+      },
+      {
+        path: "about",
+        element: <AboutPage />,
       },
     ],
   },
