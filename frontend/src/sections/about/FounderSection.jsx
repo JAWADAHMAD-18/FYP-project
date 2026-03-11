@@ -24,12 +24,16 @@ export default function FounderSection() {
           viewport={{ once: true, amount: 0.2 }}
           transition={{ delay: 0.1 }}
           whileHover={{ y: -4 }}
-          className="max-w-xl mx-auto p-8 rounded-3xl bg-white border border-gray-100 shadow-lg"
+          className="max-w-2xl mx-auto p-8 rounded-3xl bg-white border border-gray-100 shadow-lg"
         >
           <div className="flex flex-col sm:flex-row items-center gap-8">
             <div className="flex-shrink-0">
-              <div className="w-33 h-46 rounded-2xl  flex justify-center items-centertext-white  font-black shadow-lg">
-                <img src={jawadAhmad} alt="founder pic" />
+              <div className="w-32 h-44 rounded-2xl overflow-hidden shadow-lg">
+                <img
+                  src={jawadAhmad}
+                  alt="Founder Jawad Ahmad"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <div className="flex-1 text-center sm:text-left">

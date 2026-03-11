@@ -27,21 +27,6 @@ export default function Navbar() {
         {/* CENTER MENU (Desktop) */}
         <div className="hidden md:flex gap-8 text-lg font-medium items-center">
           {/* Always-visible Custom Package link */}
-          {/* <NavLink
-            to="/custom-package"
-            data-aos="fade-down"
-            data-aos-duration="600"
-            data-aos-easing="linear"
-            className={({ isActive }) =>
-              `inline-block font-medium transition ${
-                isActive
-                  ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
-                  : "text-[#0A1A44] hover:text-teal-600"
-              }`
-            }
-          >
-            Custom Package
-          </NavLink> */}
 
           {user && (
             <>
@@ -102,7 +87,7 @@ export default function Navbar() {
             </>
           )}
           <NavLink
-            to="/about"
+            to="/packages"
             data-aos="fade-down"
             data-aos-duration="600"
             data-aos-easing="linear"
@@ -114,8 +99,9 @@ export default function Navbar() {
               }`
             }
           >
-            About
+            Packages
           </NavLink>
+
           <NavLink
             to="/custom-package"
             data-aos="fade-down"
@@ -131,6 +117,21 @@ export default function Navbar() {
           >
             Custom Package
           </NavLink>
+          <NavLink
+            to="/about"
+            data-aos="fade-down"
+            data-aos-duration="600"
+            data-aos-easing="linear"
+            className={({ isActive }) =>
+              `inline-block font-medium transition ${
+                isActive
+                  ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
+                  : "text-[#0A1A44] hover:text-teal-600"
+              }`
+            }
+          >
+            About
+          </NavLink>
         </div>
 
         {/* RIGHT MENU */}
@@ -145,7 +146,9 @@ export default function Navbar() {
               <Headset className="w-5 h-5" />
               {(totalUnreadConversations ?? 0) > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-teal-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-sm">
-                  {(totalUnreadConversations ?? 0) > 99 ? "99+" : totalUnreadConversations}
+                  {(totalUnreadConversations ?? 0) > 99
+                    ? "99+"
+                    : totalUnreadConversations}
                 </span>
               )}
             </button>
@@ -196,7 +199,9 @@ export default function Navbar() {
                   <Headset className="w-5 h-5" />
                   {(totalUnreadConversations ?? 0) > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-teal-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-sm">
-                      {(totalUnreadConversations ?? 0) > 99 ? "99+" : totalUnreadConversations}
+                      {(totalUnreadConversations ?? 0) > 99
+                        ? "99+"
+                        : totalUnreadConversations}
                     </span>
                   )}
                 </button>

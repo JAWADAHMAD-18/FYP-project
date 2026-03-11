@@ -82,7 +82,7 @@ export default function StatsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
         >
           {stats.map((stat, index) => {
             const Icon = stat.icon;
@@ -93,8 +93,7 @@ export default function StatsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ scale: 1.02, y: -4 }}
-                className="group p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-lg hover:border-teal-100 transition-all duration-300"
+                className="group p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:-translate-y-1 hover:shadow-lg hover:border-teal-100 transition-all duration-300"
               >
                 <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center mb-4 text-teal-600 group-hover:bg-teal-100 transition-colors">
                   <Icon className="w-6 h-6" strokeWidth={2} />
