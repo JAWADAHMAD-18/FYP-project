@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Plane, Map, Calendar, Plus, ExternalLink, Ticket } from "lucide-react";
-import { getMyBookings } from "../../services/booking.service.js";
+import { Link } from "react-router-dom";
+import { getUpcomingBookings } from "../../services/booking.service.js";
 import TripFusionLoader from "../../components/Loader/TripFusionLoader.jsx";
 
 const UpcomingTrips = () => {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fmtDate = (d) => {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   useEffect(() => {
     const fetchBookings = async () => {
       setLoading(true);
-      const bookings = await getMyBookings();
+      const bookings = await getUpcomingBookings();
       setTrips(bookings);
       setLoading(false);
     };
@@ -65,16 +75,16 @@ const UpcomingTrips = () => {
                   <div className="relative w-full lg:w-64 h-44 rounded-2xl overflow-hidden shadow-inner bg-gray-100/50">
                     <img
                       src={
-                        trip.packageId?.mainImage ||
+                        trip.packageSnapshot?.images?.[0] ||
                         "https://images.unsplash.com/photo-1488085061387-422e29b40080?q=80&w=1000"
                       }
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      alt={trip.packageId?.title || "Trip Image"}
+                      alt={trip.packageSnapshot?.title || "Trip Image"}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <span className="absolute bottom-3 left-3 text-white font-bold text-sm flex items-center gap-1">
                       <Map size={14} />{" "}
-                      {trip.packageId?.location || "International"}
+                      {trip.packageSnapshot?.destination || "Destination"}
                     </span>
                   </div>
 
@@ -84,18 +94,24 @@ const UpcomingTrips = () => {
                       <div>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border ${
-                            trip.status === "Confirmed"
+                            trip.bookingStatus === "Confirmed"
                               ? "bg-blue-50 text-blue-600 border-blue-100"
-                              : trip.status === "Pending"
+                              : trip.bookingStatus === "Pending"
                               ? "bg-yellow-50 text-yellow-600 border-yellow-100"
                               : "bg-gray-50 text-gray-500 border-gray-100"
                           }`}
                         >
-                          {trip.status || "Confirmed"}
+                          {trip.bookingStatus || "Pending"}
                         </span>
                         <h3 className="text-2xl font-bold text-gray-900 mt-2 tracking-tight">
-                          {trip.packageId?.title || "Custom Fusion Trip"}
+                          {trip.packageSnapshot?.title || "Trip Booking"}
                         </h3>
+                        <p className="text-sm text-gray-500 mt-1 font-medium">
+                          Travelers:{" "}
+                          <span className="text-gray-700 font-bold">
+                            {trip.numPeople || 1}
+                          </span>
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-400 font-medium">
@@ -112,14 +128,15 @@ const UpcomingTrips = () => {
                       <div className="flex justify-between text-xs font-bold text-gray-400 uppercase">
                         <span>Preparation</span>
                         <span>
-                          {trip.status === "Completed" ? "100%" : "65%"}
+                          {trip.bookingStatus === "Confirmed" ? "80%" : "65%"}
                         </span>
                       </div>
                       <div className="w-full h-2 bg-gray-100/50 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{
-                            width: trip.status === "Completed" ? "100%" : "65%",
+                            width:
+                              trip.bookingStatus === "Confirmed" ? "80%" : "65%",
                           }}
                           transition={{ duration: 1, ease: "easeOut" }}
                           className="h-full bg-teal-500 rounded-full"
@@ -130,13 +147,7 @@ const UpcomingTrips = () => {
                     <div className="flex items-center gap-6 text-gray-500 font-medium">
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar size={16} className="text-teal-500" />
-                        {trip.startDate
-                          ? new Date(trip.start_Date).toLocaleDateString()
-                          : "TBD"}{" "}
-                        -{" "}
-                        {trip.endDate
-                          ? new Date(trip.end_Date).toLocaleDateString()
-                          : "TBD"}
+                        {fmtDate(trip.start_date)} - {fmtDate(trip.end_date)}
                       </div>
                     </div>
                   </div>
@@ -146,9 +157,12 @@ const UpcomingTrips = () => {
                     <button className="flex items-center justify-center gap-2 w-full lg:min-w-[200px] py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-teal-600 transition-all shadow-md active:scale-95">
                       <Ticket size={18} /> View Tickets
                     </button>
-                    <button className="flex items-center justify-center gap-2 w-full py-3.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:border-teal-600 hover:text-teal-600 transition-all active:scale-95">
-                      <ExternalLink size={18} /> Trip Details
-                    </button>
+                    <Link
+                      to={`/dashboard/bookings/${trip._id}`}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:border-teal-600 hover:text-teal-600 transition-all active:scale-95"
+                    >
+                      <ExternalLink size={18} /> View Details
+                    </Link>
                   </div>
                 </div>
               </motion.div>

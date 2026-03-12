@@ -46,6 +46,8 @@ app.use("/api/v1", customPackageRoutes); // Custom package routes
 app.use("/api/v1/chat", chatBotRoutes); // Chatbot endpoint
 app.use("/api/v1/realtime-chat", realtimeChatRoutes); // Realtime chat routes
 app.use("/api/v1/user/booking", userBookingRoutes); // User booking routes
+// Alias (matches REST-style endpoints used by frontend/services)
+app.use("/api/v1/bookings", userBookingRoutes);
 app.use("/api/v1/admin/booking", adminBookingRoutes); // Admin booking routes
 app.use("/api/v1/admin/dashboard", adminDashboardRoutes); // Admin dashboard routes
 app.use("/api/v1/favorites", favoriteRoutes); // Favorite routes

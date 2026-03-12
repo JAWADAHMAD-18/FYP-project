@@ -16,6 +16,7 @@ const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
 const Signup = lazy(() => import("./pages/Signup.jsx"));
 const Login = lazy(() => import("./pages/LoginPage.jsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const BookingDetail = lazy(() => import("./pages/dashboard/BookingDetail.jsx"));
 const PackagesPage = lazy(() => import("./pages/packages/PackagesPage.jsx"));
 const PackageDetailPage = lazy(
   () => import("./pages/packages/PackageDetailPage.jsx"),
@@ -56,6 +57,10 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <Dashboard />,
+          },
+          {
+            path: "bookings/:id",
+            element: <BookingDetail />,
           },
         ],
       },

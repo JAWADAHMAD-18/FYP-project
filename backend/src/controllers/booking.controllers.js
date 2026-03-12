@@ -105,7 +105,7 @@ export const createBooking = asyncHandler(async (req, res) => {
             notes: notes || null,
             paymentProof,
             bookingStatus: "Pending",
-            paymentStatus: "NotPaid",
+            payment_status: "pending_payment",
           },
         ],
         { session }
@@ -210,4 +210,72 @@ export const cancelMyBooking = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, booking, "Booking cancelled successfully"));
+});
+
+// ─── Get upcoming bookings for the logged-in user (travelDate >= today)
+export const getUpcomingBookings = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const bookings = await Booking.find({
+    user: userId,
+    travelDate: { $gte: today },
+  })
+    .sort({ travelDate: 1 })
+    .select("-__v")
+    .lean();
+
+  console.log("User ID:", req.user._id);
+  console.log("Today:", today);
+  console.log("Upcoming bookings found:", bookings.length);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        bookings,
+        "Upcoming bookings retrieved successfully"
+      )
+    );
+});
+
+// ─── Upload payment proof for a booking (owner-only)
+export const uploadPaymentProof = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const bookingId = req.params.bookingId;
+  const paymentNote = req.body?.payment_note ?? null;
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) throw new ApiError(404, "Booking not found");
+
+  if (booking.user.toString() !== userId.toString())
+    throw new ApiError(403, "Access denied");
+
+  // Prevent re-upload if already present
+  if (booking.payment_proof_url || booking.paymentProof?.imageUrl)
+    throw new ApiError(400, "Payment proof already uploaded");
+
+  if (!req.file?.path) throw new ApiError(400, "Payment proof image is required");
+
+  const uploadResult = await cloudinaryImageUpload(req.file.path);
+  if (!uploadResult) throw new ApiError(500, "Failed to upload payment proof");
+
+  booking.payment_proof_url = uploadResult.url;
+  booking.payment_note = paymentNote || null;
+  booking.payment_status = "payment_submitted";
+
+  // Keep legacy fields in sync (non-breaking for existing UI/admin tools)
+  booking.paymentProof = booking.paymentProof || {};
+  booking.paymentProof.imageUrl = uploadResult.url;
+  booking.paymentProof.uploadedAt = new Date();
+
+  await booking.save();
+  invalidateDashboardCache();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, booking, "Payment proof uploaded successfully"));
 });

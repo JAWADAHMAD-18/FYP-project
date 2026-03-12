@@ -11,3 +11,25 @@ const storage = multer.diskStorage({
 });
 
 export const upload = multer({ storage: storage });
+
+// Strict upload middleware for payment proof uploads only
+export const uploadPaymentProof = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMime = new Set([
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ]);
+    if (!allowedMime.has(file.mimetype)) {
+      const err = new Error("Only jpg, jpeg, png, and webp images are allowed");
+      err.code = "INVALID_FILE_TYPE";
+      return cb(err, false);
+    }
+    return cb(null, true);
+  },
+});

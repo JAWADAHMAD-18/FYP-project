@@ -97,6 +97,21 @@ const BookingSchema = new mongoose.Schema(
       },
     },
 
+    // ── Bank transfer proof workflow (new, non-breaking) ────────────────────
+    payment_status: {
+      type: String,
+      enum: ["pending_payment", "payment_submitted", "payment_verified"],
+      default: "pending_payment",
+    },
+    payment_proof_url: {
+      type: String,
+      default: null,
+    },
+    payment_note: {
+      type: String,
+      default: null,
+    },
+
     // fakePayment: { type: Boolean, default: true }, // because no real gateway
     cancelReason: {
       type: String,
