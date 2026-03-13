@@ -66,7 +66,7 @@ export const createBooking = asyncHandler(async (req, res) => {
       const packageSnapshot = {
         title: pkg.title,
         destination: pkg.location,
-        durationDays: pkg.duration,
+        durationDays: pkg.durationDays,
         basePrice: pkg.price,
         category: pkg.category,
         tripType: pkg.trip_type,
@@ -98,6 +98,8 @@ export const createBooking = asyncHandler(async (req, res) => {
             pricePerPerson,
             totalPrice,
             savings,
+            durationDays: pkg.durationDays,
+            durationNights: pkg.durationNights,
             start_date: pkg.start_date,
             end_date: pkg.end_date,
             // travelDate is fixed from the package's start_date
@@ -134,6 +136,8 @@ export const createBooking = asyncHandler(async (req, res) => {
     pricePerPerson: booking.pricePerPerson,
     totalPrice: booking.totalPrice,
     savings: booking.savings,
+    durationDays: booking.durationDays,
+    durationNights: booking.durationNights,
     travelDate: booking.travelDate,
     start_date: booking.start_date,
     end_date: booking.end_date,

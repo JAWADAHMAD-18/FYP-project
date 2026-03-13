@@ -3,6 +3,7 @@ import verifyAuth from "../middleware/auth.middleware.js";
 import { isAdmin } from "../middleware/admin.middleware.js";
 import {
   getAllBookings,
+  getBookingById,
   verifyPayment,
   rejectPayment,
   cancelBookingByAdmin,
@@ -17,8 +18,11 @@ router.use(verifyAuth, isAdmin);
 // Get all bookings (with optional filters)
 router.route("/").get(getAllBookings);
 
-// Search bookings by packageId or userId
+// Search bookings by packageId, userId, bookingCode, or q
 router.route("/search").get(searchBookings);
+
+// Get single booking by ID
+router.route("/:id").get(getBookingById);
 
 // Verify payment for a booking
 router.route("/:id/verify-payment").patch(verifyPayment);

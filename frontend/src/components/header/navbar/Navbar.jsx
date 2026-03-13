@@ -41,6 +41,14 @@ export default function Navbar() {
                     Dashboard
                   </Btn>
                   <Btn
+                    to="/admin/bookings"
+                    data-aos="fade-down"
+                    data-aos-duration="750"
+                    data-aos-easing="linear"
+                  >
+                    Bookings
+                  </Btn>
+                  <Btn
                     to="/packages"
                     data-aos="fade-down"
                     data-aos-duration="800"
@@ -76,62 +84,46 @@ export default function Navbar() {
                     Packages
                   </Btn>
                   <Btn
+                    to="/about"
                     data-aos="fade-down"
                     data-aos-duration="900"
                     data-aos-easing="linear"
                   >
-                    Contact
+                    About
+                  </Btn>
+                  <Btn
+                    to="/custom-package"
+                    data-aos="fade-down"
+                    data-aos-duration="1000"
+                    data-aos-easing="linear"
+                  >
+                    custom-package
                   </Btn>
                 </>
               )}
             </>
           )}
-          <NavLink
-            to="/packages"
-            data-aos="fade-down"
-            data-aos-duration="600"
-            data-aos-easing="linear"
-            className={({ isActive }) =>
-              `inline-block font-medium transition ${
-                isActive
-                  ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
-                  : "text-[#0A1A44] hover:text-teal-600"
-              }`
-            }
-          >
-            Packages
-          </NavLink>
-
-          <NavLink
-            to="/custom-package"
-            data-aos="fade-down"
-            data-aos-duration="600"
-            data-aos-easing="linear"
-            className={({ isActive }) =>
-              `inline-block font-medium transition ${
-                isActive
-                  ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
-                  : "text-[#0A1A44] hover:text-teal-600"
-              }`
-            }
-          >
-            Custom Package
-          </NavLink>
-          <NavLink
-            to="/about"
-            data-aos="fade-down"
-            data-aos-duration="600"
-            data-aos-easing="linear"
-            className={({ isActive }) =>
-              `inline-block font-medium transition ${
-                isActive
-                  ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
-                  : "text-[#0A1A44] hover:text-teal-600"
-              }`
-            }
-          >
-            About
-          </NavLink>
+          {!user &&
+            ["packages", "custom-package", "about"].map((path) => (
+              <NavLink
+                key={path}
+                to={`/${path}`}
+                data-aos="fade-down"
+                data-aos-duration="600"
+                data-aos-easing="linear"
+                className={({ isActive }) =>
+                  `inline-block font-medium transition ${
+                    isActive
+                      ? "text-teal-600 border-b-2 border-teal-500 pb-0.5"
+                      : "text-[#0A1A44] hover:text-teal-600"
+                  }`
+                }
+              >
+                {path
+                  .replace("-", " ")
+                  .replace(/\b\w/g, (l) => l.toUpperCase())}
+              </NavLink>
+            ))}
         </div>
 
         {/* RIGHT MENU */}
@@ -268,10 +260,16 @@ export default function Navbar() {
                     <Btn to="/admin/dashboard" onClick={() => setOpen(false)}>
                       Dashboard
                     </Btn>
+                    <Btn to="/admin/bookings" onClick={() => setOpen(false)}>
+                      Bookings
+                    </Btn>
                     <Btn to="/packages" onClick={() => setOpen(false)}>
                       Packages
                     </Btn>
-                    <Btn to="/admin/package" onClick={() => setOpen(false)}>
+                    <Btn
+                      to="/admin/package/add-package"
+                      onClick={() => setOpen(false)}
+                    >
                       Add Package
                     </Btn>
                   </>

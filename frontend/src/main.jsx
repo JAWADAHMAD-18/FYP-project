@@ -27,6 +27,10 @@ const AddPackagePage = lazy(() => import("./pages/AddPackage.jsx"));
 const AdminCustomPackagePage = lazy(
   () => import("./pages/admin/AdminCustomPackagePage.jsx"),
 );
+const AdminBookings = lazy(() => import("./pages/admin/AdminBookings.jsx"));
+const AdminBookingDetail = lazy(
+  () => import("./pages/admin/AdminBookingDetail.jsx"),
+);
 const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
 
 const router = createBrowserRouter([
@@ -83,6 +87,14 @@ const router = createBrowserRouter([
           {
             path: "custom-package/:requestId",
             element: <AdminCustomPackagePage />,
+          },
+          {
+            path: "bookings",
+            element: <AdminBookings />,
+          },
+          {
+            path: "bookings/:id",
+            element: <AdminBookingDetail />,
           },
         ],
       },

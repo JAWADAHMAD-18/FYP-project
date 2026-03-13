@@ -103,18 +103,51 @@ export const cancelBookingByAdmin = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, booking, "Booking cancelled successfully"));
 });
 
-// Search bookings by packageId, userId, bookingStatus, paymentStatus
-export const searchBookings = asyncHandler(async (req, res) => {
-  const { packageId, userId, bookingStatus, paymentStatus } = req.query;
+// Get a single booking by ID (admin)
+export const getBookingById = asyncHandler(async (req, res) => {
+  const bookingId = req.params.id;
+  const booking = await Booking.findById(bookingId)
+    .select("-__v")
+    .populate("user", "name email")
+    .populate("package", "title location price");
+  if (!booking) throw new ApiError(404, "Booking not found");
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, booking, "Booking details retrieved successfully")
+    );
+});
 
-  // Build query dynamically
+// Search bookings by packageId, userId, bookingStatus, paymentStatus, or bookingCode
+export const searchBookings = asyncHandler(async (req, res) => {
+  const { packageId, userId, bookingStatus, paymentStatus, q } = req.query;
+
   const query = {};
   if (packageId) query.package = packageId;
   if (userId) query.user = userId;
   if (bookingStatus) query.bookingStatus = bookingStatus;
   if (paymentStatus) query.paymentStatus = paymentStatus;
 
-  if (!packageId && !userId && !bookingStatus && !paymentStatus) {
+  if (q && q.trim()) {
+    const term = q.trim();
+    const mongoose = (await import("mongoose")).default;
+    if (mongoose.Types.ObjectId.isValid(term) && term.length === 24) {
+      query.$or = [
+        { user: term },
+        { package: term },
+      ];
+    } else {
+      query.bookingCode = { $regex: term, $options: "i" };
+    }
+  }
+
+  if (
+    !packageId &&
+    !userId &&
+    !bookingStatus &&
+    !paymentStatus &&
+    !(q && q.trim())
+  ) {
     throw new ApiError(400, "At least one filter parameter is required");
   }
 
