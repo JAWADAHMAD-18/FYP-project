@@ -8,11 +8,11 @@ const router = Router();
 
 // Rate limiter: 10 requests per 15 minutes for sensitive auth endpoints
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { success: false, message: "Too many requests, please try again after 15 minutes." },
-  standardHeaders: true,
-  legacyHeaders: false,
+  // windowMs: 15 * 60 * 1000,
+  // max: 10,
+  // message: { success: false, message: "Too many requests, please try again after 15 minutes." },
+  // standardHeaders: true,
+  // legacyHeaders: false,
 });
 
 // Public routes (no auth required)
@@ -24,4 +24,4 @@ router.route("/refresh-token").post(authLimiter, refreshAccessToken);
 router.route("/logout").post(verifyAuth, logoutUser);
 router.route("/me").get(verifyAuth, getCurrentUser);
 
-export default router;
+export default router;

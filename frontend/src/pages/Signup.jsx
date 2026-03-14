@@ -4,7 +4,7 @@ import { User, Mail, Lock, Plane, ArrowLeft } from "lucide-react";
 import InputField from "../components/inputs/SignupInputs";
 import API from "../api/Api.js";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth.js";
 
 
 const Signup = () => {
