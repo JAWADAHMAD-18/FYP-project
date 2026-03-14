@@ -3,6 +3,14 @@ import Booking from "../models/booking.models.js";
 import { ApiError } from "../utills/apiError.utills.js";
 import { ApiResponse } from "../utills/apiResponse.utills.js";
 import { invalidateDashboardCache } from "./adminDashboardSummary.controllers.js";
+import User from "../models/users.models.js";
+// ─── Email service (fire-and-forget — never blocks a response) ───────────────
+import {
+  sendBookingApprovedEmail,
+  sendPaymentApprovedEmail,
+  sendBookingCancelledEmail,
+  sendPaymentCancelledEmail,
+} from "../services/email.service.js";
 
 // Get all bookings (admin)
 export const getAllBookings = asyncHandler(async (req, res) => {
@@ -48,6 +56,16 @@ export const verifyPayment = asyncHandler(async (req, res) => {
 
   await booking.save();
   invalidateDashboardCache();
+
+  // ─── Send payment-approved + booking-approved emails (non-blocking) ───────
+  // booking.user is an ObjectId here — fetch the user for name + email.
+  User.findById(booking.user).select("name email").lean().then((user) => {
+    if (user) {
+      sendPaymentApprovedEmail({ user, booking });  // "Payment Verified" email
+      sendBookingApprovedEmail({ user, booking });  // "Booking Confirmed" email
+    }
+  }).catch(() => {}); // silent fallback
+  // ────────────────────────────────────────────────────────────────────
 
   return res
     .status(200)
@@ -97,6 +115,20 @@ export const cancelBookingByAdmin = asyncHandler(async (req, res) => {
 
   await booking.save();
   invalidateDashboardCache();
+
+  // ─── Send cancellation + refund emails (non-blocking) ──────────────────
+  User.findById(booking.user).select("name email").lean().then((user) => {
+    if (user) {
+      sendBookingCancelledEmail({ user, booking }); // "Booking Cancelled" email
+      // If payment was already made, also send a refund-initiated email
+      if (booking.paymentStatus === "Paid") {
+        // Update paymentStatus in the local object for the email display
+        booking.paymentStatus = "Refunded";
+        sendPaymentCancelledEmail({ user, booking }); // "Refund Initiated" email
+      }
+    }
+  }).catch(() => {}); // silent fallback
+  // ────────────────────────────────────────────────────────────────────
 
   return res
     .status(200)

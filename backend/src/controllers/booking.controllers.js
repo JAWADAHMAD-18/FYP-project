@@ -6,6 +6,13 @@ import { ApiError } from "../utills/apiError.utills.js";
 import { ApiResponse } from "../utills/apiResponse.utills.js";
 import cloudinaryImageUpload from "../utills/cloudinary.utills.js";
 import { invalidateDashboardCache } from "./adminDashboardSummary.controllers.js";
+// ─── Email service (fire-and-forget — never blocks a response) ───────────────
+import {
+  sendBookingCreatedEmail,
+  sendBookingCancelledEmail,
+} from "../services/email.service.js";
+// For payment/approval emails, see: adminBooking.controllers.js
+// sendBookingApprovedEmail, sendPaymentApprovedEmail, sendPaymentCancelledEmail
 
 // Create a new booking
 export const createBooking = asyncHandler(async (req, res) => {
@@ -147,6 +154,12 @@ export const createBooking = asyncHandler(async (req, res) => {
 
   invalidateDashboardCache();
 
+  // ─── Send booking-created email (non-blocking) ───────────────────────────
+  // req.user has { name, email } from verifyAuth middleware.
+  // booking.packageSnapshot contains the snapshot saved during this transaction.
+  sendBookingCreatedEmail({ user: req.user, booking });
+  // ────────────────────────────────────────────────────────────────────────
+
   return res
     .status(201)
     .json(
@@ -210,6 +223,11 @@ export const cancelMyBooking = asyncHandler(async (req, res) => {
 
   await booking.save();
   invalidateDashboardCache();
+
+  // ─── Send booking-cancelled email (non-blocking) ─────────────────────────
+  // req.user is populated by verifyAuth — has name + email already.
+  sendBookingCancelledEmail({ user: req.user, booking });
+  // ────────────────────────────────────────────────────────────────────────
 
   return res
     .status(200)
