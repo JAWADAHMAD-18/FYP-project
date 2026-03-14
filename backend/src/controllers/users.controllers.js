@@ -41,17 +41,26 @@ export const registerUser = asyncHandler(async (req, res) => {
     password,
   });
 
-  // Fetch created user without password
-  const createdUser = await User.findOne({ email }).select("-password");
+  // Auto-login: generate tokens immediately after registration
+  const { accessToken, refreshToken } = await generateAccessandRefreshToken(user._id);
+
+  // Fetch created user without sensitive fields
+  const createdUser = await User.findById(user._id).select("-password -refreshToken");
   if (!createdUser) {
     throw new ApiError(500, "Failed to create user");
   }
 
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(201, "User created successfully", { user: createdUser })
-    );
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+  res.cookie("refreshToken", refreshToken, cookieOptions);
+
+  return res.status(201).json(
+    new ApiResponse(201, { user: createdUser, accessToken }, "User registered successfully")
+  );
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -91,36 +100,42 @@ export const loginUser = asyncHandler(async (req, res) => {
 });
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
-  // Try cookie first, then body
-  console.log("Refresh token from cookie:", req.cookies.refreshToken);
+  // Read refresh token from httpOnly cookie ONLY (no body fallback)
+  const incomingRefreshToken = req.cookies?.refreshToken;
+  if (!incomingRefreshToken) throw new ApiError(401, "No refresh token provided");
 
-  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-  if (!refreshToken) throw new ApiError(401, "No refresh token provided");
   let decoded;
   try {
-    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    decoded = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
   } catch (error) {
-    throw new ApiError(401, "Invalid refresh token");
+    throw new ApiError(401, "Invalid or expired refresh token");
   }
-  const user = await User.findById(decoded._id); //here i canged id to _id
+
+  // Use decoded.id — matches the payload field set in generateRefreshToken: { id: this._id }
+  const user = await User.findById(decoded.id);
   if (!user) throw new ApiError(404, "User not found");
-  if (!user.refreshToken || user.refreshToken !== refreshToken) {
+
+  if (!user.refreshToken || user.refreshToken !== incomingRefreshToken) {
     throw new ApiError(401, "Refresh token revoked or does not match");
   }
-  const accessToken = await user.generateAccessToken();
+
+  // Rotate: generate brand-new refresh token and new access token
+  const newRefreshToken = user.generateRefreshToken();
+  const newAccessToken = await user.generateAccessToken();
+
+  user.refreshToken = newRefreshToken;
+  await user.save({ validateBeforeSave: false });
 
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   };
-  res.cookie("refreshToken", refreshToken, cookieOptions);
+  res.cookie("refreshToken", newRefreshToken, cookieOptions);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      accessToken,
-    }, "Access token refreshed successfully")
+    new ApiResponse(200, { accessToken: newAccessToken }, "Access token refreshed successfully")
   );
 });
 
@@ -136,16 +151,16 @@ export const logoutUser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
-  const options = {
+  // Use matching cookie attributes to ensure the browser actually clears the cookie
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   };
   return res
     .status(200)
-    .clearCookie("refreshToken", options)
-    .clearCookie("accessToken", options)
-    .json(new ApiResponse(200, "User logged out successfully"));
+    .clearCookie("refreshToken", cookieOptions)
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {

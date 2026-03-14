@@ -4,16 +4,19 @@ import { User, Mail, Lock, Plane, ArrowLeft } from "lucide-react";
 import InputField from "../components/inputs/SignupInputs";
 import API from "../api/Api.js";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { applyAuth } = useAuth();
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,17 +28,24 @@ const Signup = () => {
       alert("Passwords do not match!");
       return;
     }
+    setLoading(true);
     try {
       const payload = {
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
       };
-      await API.post("/user/register", payload);
-      alert("Signup successful! Please login.");
-      setForm({ name: "", email: "", password: "", confirmPassword: "" });
+      const res = await API.post("/user/register", payload, { withCredentials: true });
+      const token = res.data?.data?.accessToken;
+      if (!token) throw new Error("No access token returned from registration.");
+
+      // Authenticate immediately — no need to visit /login
+      const userData = await applyAuth(token);
+      navigate(userData?.isAdmin ? "/admin/dashboard" : "/dashboard");
     } catch (error) {
-      alert(error.response?.data?.message || "Something went wrong.");
+      alert(error.response?.data?.message || error.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -147,13 +157,14 @@ const Signup = () => {
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: loading ? 1 : 1.02 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
               type="submit"
-              className="w-full bg-[#0A1A44] hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-3 mt-4 shadow-lg shadow-blue-900/10"
+              disabled={loading}
+              className="w-full bg-[#0A1A44] hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-3 mt-4 shadow-lg shadow-blue-900/10"
             >
-              <Plane className="w-5 h-5 rotate-45" />
-              Join the Journey
+              <Plane className={`w-5 h-5 rotate-45 ${loading ? "animate-pulse" : ""}`} />
+              {loading ? "Creating your account..." : "Join the Journey"}
             </motion.button>
           </form>
 

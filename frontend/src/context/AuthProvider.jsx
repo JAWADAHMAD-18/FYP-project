@@ -4,9 +4,8 @@ import api, { setAccessToken as setApiToken } from "../api/Api";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [accessToken, setAccessToken] = useState(
-    localStorage.getItem("accessToken") || null,
-  );
+  // Access token lives in memory only — never persisted to localStorage (XSS risk)
+  const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Sync token with Axios
@@ -28,13 +27,12 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Apply auth after login / restore
+  // Apply auth after login / signup / silent restore
   const applyAuth = useCallback(
     async (token) => {
       if (!token) return null;
 
       setAccessToken(token);
-      localStorage.setItem("accessToken", token);
       setApiToken(token);
 
       const userData = await fetchUser(token);
@@ -50,24 +48,29 @@ export function AuthProvider({ children }) {
         console.warn("[Auth] User fetch failed after applying token");
         setAccessToken(null);
         setUser(null);
-        localStorage.removeItem("accessToken");
       }
       return userData; // ← return so callers get fresh data (avoids React state race)
     },
     [fetchUser],
   );
 
-  // Restore auth on page reload
+  // Restore auth on page reload via silent refresh (uses httpOnly RT cookie)
   useEffect(() => {
     const restoreAuth = async () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
+      try {
+        // Cookie sent automatically — no token in localStorage needed
+        const { data } = await api.post("/user/refresh-token", {}, { withCredentials: true });
+        const token = data?.data?.accessToken;
+        if (token) {
+          await applyAuth(token);
+        }
+      } catch {
+        // No valid session — user stays logged out
+        setUser(null);
+        setAccessToken(null);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      await applyAuth(token);
-      setLoading(false);
     };
 
     restoreAuth();
@@ -102,9 +105,9 @@ export function AuthProvider({ children }) {
 
     setUser(null);
     setAccessToken(null);
-    localStorage.removeItem("accessToken");
+    setApiToken(null);
 
-    // sync logout across tabs
+    // Write-only signal to sync logout across tabs (not used to read the token)
     localStorage.setItem("app_logout", Date.now());
   };
 
@@ -130,6 +133,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         logout,
+        applyAuth,
         isAuthenticated: !!user,
       }}
     >
