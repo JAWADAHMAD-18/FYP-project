@@ -1,26 +1,15 @@
-// utils/emailTemplates.utills.js
-// SaaS-style HTML email templates for TripFusion transactional emails
-
-// ─── Shared helpers ──────────────────────────────────────────────────────────
 
 const BRAND_COLOR = "#0A1A44";
 const ACCENT_COLOR = "#2563EB";
 const BG_COLOR = "#F8FAFC";
 const BORDER_COLOR = "#E2E8F0";
 
-/**
- * Formats a price as USD currency string
- * @param {number} amount
- */
 const formatPrice = (amount) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
     amount ?? 0
   );
 
-/**
- * Formats a date to a readable string
- * @param {Date|string} date
- */
+// Format date to "month day, year"
 const formatDate = (date) => {
   if (!date) return "N/A";
   return new Date(date).toLocaleDateString("en-US", {
@@ -30,11 +19,7 @@ const formatDate = (date) => {
   });
 };
 
-/**
- * Shared outer shell (header + footer) that wraps every email body.
- * @param {string} bodyContent  - Inner HTML content between header and footer
- * @param {string} previewText  - One-line preview shown in email client list
- */
+// Wrap email in HTML
 const wrapEmail = (bodyContent, previewText = "") => `
 <!DOCTYPE html>
 <html lang="en">
@@ -108,11 +93,7 @@ const wrapEmail = (bodyContent, previewText = "") => `
 </body>
 </html>`;
 
-/**
- * Renders a pill badge for status labels.
- * @param {string} label
- * @param {'green'|'yellow'|'red'|'blue'} color
- */
+// Render status badge
 const statusBadge = (label, color = "blue") => {
   const colors = {
     green: { bg: "#DCFCE7", text: "#166534" },
@@ -125,21 +106,14 @@ const statusBadge = (label, color = "blue") => {
   return `<span style="display:inline-block;background:${bg};color:${text};font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.3px;">${label}</span>`;
 };
 
-/**
- * Renders a consistent booking detail table row.
- * @param {string} label
- * @param {string} value
- */
+// Render detail row
 const detailRow = (label, value) => `
   <tr>
     <td style="padding:10px 0; border-bottom:1px solid ${BORDER_COLOR}; font-size:13px; color:#64748B; white-space:nowrap; vertical-align:top; padding-right:16px;">${label}</td>
     <td style="padding:10px 0; border-bottom:1px solid ${BORDER_COLOR}; font-size:13px; color:#0F172A; font-weight:600; vertical-align:top;">${value}</td>
   </tr>`;
 
-/**
- * Renders the standard booking details block.
- * @param {Object} booking  - booking document or plain object
- */
+
 const bookingDetailsBlock = (booking) => {
   const snap = booking.packageSnapshot || {};
   const nights = snap.durationDays ? snap.durationDays - 1 : 0;
@@ -183,11 +157,7 @@ const bookingDetailsBlock = (booking) => {
   </table>`;
 };
 
-/**
- * Renders a CTA (call-to-action) button.
- * @param {string} href
- * @param {string} label
- */
+// Render CTA button
 const ctaButton = (href, label) => `
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 28px auto 0; text-align:center;">
     <tr>
@@ -198,11 +168,7 @@ const ctaButton = (href, label) => `
   </table>`;
 
 // ─── Email Templates ──────────────────────────────────────────────────────────
-
-/**
- * Welcome email sent after successful registration.
- * @param {{ name: string, dashboardUrl: string }} data
- */
+// Welcome email
 export const welcomeEmailTemplate = ({ name, dashboardUrl }) =>
   wrapEmail(
     `
@@ -218,6 +184,7 @@ export const welcomeEmailTemplate = ({ name, dashboardUrl }) =>
         <td>
           <p style="font-size:14px; font-weight:700; color:${BRAND_COLOR}; margin-bottom:8px;">🚀 Get started in 3 steps:</p>
           <ol style="font-size:13px; color:#475569; padding-left:18px; line-height:2;">
+            <li>Generate a personalized Package and get ready to book with one click</li>
             <li>Explore our curated travel packages</li>
             <li>Pick your ideal trip and book with one click</li>
             <li>Upload your payment proof and we'll handle the rest</li>
@@ -231,10 +198,7 @@ export const welcomeEmailTemplate = ({ name, dashboardUrl }) =>
     `Welcome aboard, ${name}! Your TripFusion account is ready.`
   );
 
-/**
- * Sent to user when a booking is created (status: Pending).
- * @param {{ user: Object, booking: Object, dashboardUrl: string }} data
- */
+// Booking created email
 export const bookingCreatedEmailTemplate = ({ user, booking, dashboardUrl }) =>
   wrapEmail(
     `
@@ -260,10 +224,7 @@ export const bookingCreatedEmailTemplate = ({ user, booking, dashboardUrl }) =>
     `Booking received for ${booking.packageSnapshot?.title || "your trip"} — Pending Review.`
   );
 
-/**
- * Sent to user when admin confirms the booking.
- * @param {{ user: Object, booking: Object, dashboardUrl: string }} data
- */
+// Booking approved email
 export const bookingApprovedEmailTemplate = ({ user, booking, dashboardUrl }) =>
   wrapEmail(
     `
@@ -289,10 +250,7 @@ export const bookingApprovedEmailTemplate = ({ user, booking, dashboardUrl }) =>
     `Your booking for ${booking.packageSnapshot?.title || "your trip"} is confirmed!`
   );
 
-/**
- * Sent to user when admin verifies/approves their uploaded payment proof.
- * @param {{ user: Object, booking: Object, dashboardUrl: string }} data
- */
+// Payment approved email
 export const paymentApprovedEmailTemplate = ({ user, booking, dashboardUrl }) =>
   wrapEmail(
     `
@@ -320,10 +278,7 @@ export const paymentApprovedEmailTemplate = ({ user, booking, dashboardUrl }) =>
     `Payment verified for ${booking.packageSnapshot?.title || "your trip"} — You're all set!`
   );
 
-/**
- * Sent to user when their booking is cancelled (by themselves or admin).
- * @param {{ user: Object, booking: Object, dashboardUrl: string }} data
- */
+// Booking cancelled email
 export const bookingCancelledEmailTemplate = ({ user, booking, dashboardUrl }) => {
   const cancelledByText =
     booking.cancelledBy === "Admin"
@@ -356,10 +311,7 @@ export const bookingCancelledEmailTemplate = ({ user, booking, dashboardUrl }) =
   );
 };
 
-/**
- * Sent to user when a payment is marked as refunded after cancellation.
- * @param {{ user: Object, booking: Object, dashboardUrl: string }} data
- */
+// Payment cancelled email
 export const paymentCancelledEmailTemplate = ({ user, booking, dashboardUrl }) =>
   wrapEmail(
     `

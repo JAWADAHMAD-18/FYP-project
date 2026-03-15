@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AuthContext } from "./AuthContext";
 import api, { setAccessToken as setApiToken } from "../api/Api";
 
@@ -6,7 +6,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   // Access token lives in memory only — never persisted to localStorage (XSS risk)
   const [accessToken, setAccessToken] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   // Sync token with Axios
   useEffect(() => {
@@ -19,8 +18,8 @@ export function AuthProvider({ children }) {
       const res = await api.get("/user/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("User data received:", res.data?.message?.user);
-      return res.data?.message?.user || null;
+      console.log("User data received:", res.data?.data?.user);
+      return res.data?.data?.user || null;
     } catch (err) {
       console.error("Error fetching user:", err);
       return null;
@@ -54,8 +53,12 @@ export function AuthProvider({ children }) {
     [fetchUser],
   );
 
-  // Restore auth on page reload via silent refresh (uses httpOnly RT cookie)
+  
+  const hasMounted = useRef(false);
   useEffect(() => {
+    if (hasMounted.current) return;
+    hasMounted.current = true;
+
     const restoreAuth = async () => {
       try {
         // Cookie sent automatically — no token in localStorage needed
@@ -69,12 +72,12 @@ export function AuthProvider({ children }) {
         setUser(null);
         setAccessToken(null);
       } finally {
-        setLoading(false);
       }
     };
 
     restoreAuth();
-  }, [applyAuth]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Login
   const login = async (credentials) => {
@@ -130,7 +133,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         accessToken,
-        loading,
+        // loading,
         login,
         logout,
         applyAuth,

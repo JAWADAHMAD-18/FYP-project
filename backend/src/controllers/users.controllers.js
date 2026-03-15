@@ -4,7 +4,6 @@ import asyncHandler from "../utills/asynchandler.utills.js";
 import User from "../models/users.models.js";
 import cloudinaryImageUpload from "../utills/cloudinary.utills.js";
 import jwt from "jsonwebtoken";
-// ─── Email service (fire-and-forget — never blocks a response) ───────────────
 import { sendWelcomeEmail } from "../services/email.service.js";
 
 export const generateAccessandRefreshToken = async (userId) => {
@@ -59,11 +58,8 @@ export const registerUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
   res.cookie("refreshToken", refreshToken, cookieOptions);
-
-  // ─── Send welcome email (non-blocking) ──────────────────────────────────
-  // Runs asynchronously after response is sent. Never delays or breaks API.
+// Send welcome email
   sendWelcomeEmail(createdUser);
-  // ────────────────────────────────────────────────────────────────────────
 
   return res.status(201).json(
     new ApiResponse(201, { user: createdUser, accessToken }, "User registered successfully")
@@ -127,7 +123,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 
   // Rotate: generate brand-new refresh token and new access token
-  const newRefreshToken = user.generateRefreshToken();
+  const newRefreshToken = await user.generateRefreshToken();
   const newAccessToken = await user.generateAccessToken();
 
   user.refreshToken = newRefreshToken;
@@ -187,5 +183,5 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "User data retrieved successfully", { user }));
+    .json(new ApiResponse(200, { user }, "User data retrieved successfully"));
 });
