@@ -34,6 +34,8 @@ const TravelInsights = () => {
     categoryBreakdown.find((c) => c.name === "flights")?.percentage || 0;
   const experiencesPercent =
     categoryBreakdown.find((c) => c.name === "experiences")?.percentage || 0;
+  const customPercent =
+    categoryBreakdown.find((c) => c.name === "custom")?.percentage || 0;
 
   return (
     <section className="px-6 md:px-12 py-16 bg-[#F8FAFC]">
@@ -80,7 +82,7 @@ const TravelInsights = () => {
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 leading-relaxed">
-                  You’ve saved{" "}
+                  You've saved{" "}
                   <span className="text-teal-600 font-bold">
                     {Math.round((fusionSavings / (totalSpent || 1)) * 100)}%
                   </span>{" "}
@@ -132,6 +134,22 @@ const TravelInsights = () => {
                     />
                   </div>
                 </div>
+                {customPercent > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold text-gray-600">
+                      <span>Custom Trips</span>
+                      <span>{customPercent}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-100 rounded-full">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${customPercent}%` }}
+                        transition={{ duration: 1, delay: 0.6 }}
+                        className="h-full bg-amber-500 rounded-full"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

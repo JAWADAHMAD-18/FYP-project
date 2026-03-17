@@ -74,6 +74,10 @@ const customizePackageSchema = new Schema(
     expiresAt: {
       type: Date,
     },
+    archivedAt: {
+      type: Date,
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

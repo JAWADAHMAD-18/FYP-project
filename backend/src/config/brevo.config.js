@@ -1,4 +1,3 @@
-// config/brevo.config.js
 // Brevo (formerly Sendinblue) SDK configuration for TripFusion email notifications
 
 import SibApiV3Sdk from "sib-api-v3-sdk";

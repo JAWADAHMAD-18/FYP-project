@@ -1,5 +1,7 @@
 import { redisClient, connectRedis } from "../config/redis.config.js";
 import CustomizePackage from "../models/customizePackage.model.js";
+import Booking from "../models/booking.models.js";
+import User from "../models/users.models.js";
 import { ApiError } from "../utills/apiError.utills.js";
 import { getWeatherForLocation } from "../utills/weather.utills.js";
 import { searchHotelsWithAvailability } from "../utills/hotels.utills.js";
@@ -7,6 +9,8 @@ import { searchFlights } from "../utills/flights.utills.js";
 import { fetchDestinationImage } from "../utills/unsplash.utills.js";
 import { fetchPOIs } from "../utills/pois.utills.js";
 import { generateSmartSelection } from "./customPackageGemini.service.js";
+import { invalidateDashboardCache } from "../controllers/adminDashboardSummary.controllers.js";
+import { sendBookingCreatedEmail } from "./email.service.js";
 
 const MAX_TRIP_DURATION_DAYS = 12;
 const LOCK_TTL_SECONDS = 30;
@@ -260,23 +264,21 @@ export const generateCustomPackage = async ({
 
     let flights = undefined;
     let flightsOffers = null;
+    let flightsFetchStatus = "skipped";
+    let hotelsFetchStatus = "failed";
+
     if (flightOffersOrError && flightOffersOrError.__error) {
+      flightsFetchStatus = "failed";
       flights = { error: flightOffersOrError.__error.message };
+      console.warn(`CustomPackage: flights fetch failed for "${destinationCity}":`, flightOffersOrError.__error.message);
     } else if (Array.isArray(flightOffersOrError)) {
       const limitedOffers = flightOffersOrError.slice(0, 5);
       flightsOffers = limitedOffers;
+      flightsFetchStatus = limitedOffers.length > 0 ? "success" : "failed";
       flights = {
         count: limitedOffers.length,
         offers: limitedOffers,
       };
-    }
-
-    // Defensive checks for core data
-    if (!flightsOffers || flightsOffers.length === 0) {
-      throw new ApiError(
-        502,
-        "No flights found for the given criteria. Please adjust your search."
-      );
     }
 
     const availableHotels =
@@ -289,11 +291,10 @@ export const generateCustomPackage = async ({
           )
         : [];
 
-    if (!availableHotels.length) {
-      throw new ApiError(
-        502,
-        "No available hotels found for the given criteria. Please adjust your search."
-      );
+    hotelsFetchStatus = availableHotels.length > 0 ? "success" : "failed";
+
+    if (hotelsFetchStatus === "failed") {
+      console.warn(`CustomPackage: no available hotels found for "${destinationCity}", continuing with partial data.`);
     }
 
     const { flightsSnapshot, hotelsSnapshot, weatherSnapshot } = buildSnapshots(
@@ -419,6 +420,15 @@ export const generateCustomPackage = async ({
       },
     ];
 
+    // Build a user-friendly warning if any external data source failed
+    const warnings = [];
+    if (flightsFetchStatus !== "success" && flightsFetchStatus !== "skipped") {
+      warnings.push("Flight data could not be fetched. You can still proceed and discuss options with admin.");
+    }
+    if (hotelsFetchStatus !== "success") {
+      warnings.push("Hotel data could not be fetched. You can still proceed and discuss options with admin.");
+    }
+
     const responseData = {
       tripType,
       start_date,
@@ -435,7 +445,6 @@ export const generateCustomPackage = async ({
       expiresAt,
       destinationImage,
       pois: poisSnapshot,
-      // Snapshots included for preview/confirmation flow
       inputSnapshot,
       flightsSnapshot,
       hotelsSnapshot,
@@ -445,6 +454,9 @@ export const generateCustomPackage = async ({
       selectedHotels,
       itinerary,
       reasoningSummary,
+      flightsFetchStatus,
+      hotelsFetchStatus,
+      ...(warnings.length > 0 && { warnings }),
     };
 
     timings.totalMs = Date.now() - previewStart;
@@ -588,6 +600,46 @@ export const getCustomPackageByRequestId = async (requestId) => {
 };
 
 /**
+ * Build a standardized packageSnapshot from a finalized CustomizePackage doc.
+ * Ensures snapshot shape matches predefined bookings for consistent analytics.
+ */
+const buildCustomPackageSnapshot = (doc) => {
+  const input = doc.inputSnapshot || {};
+  const locations = input.locations || [];
+  const destination = locations[locations.length - 1] || "Custom Trip";
+
+  const startDate = input.start_date ? new Date(input.start_date) : null;
+  const endDate = input.end_date ? new Date(input.end_date) : null;
+  const durationDays =
+    startDate && endDate
+      ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1
+      : null;
+
+  const imageUrl =
+    doc.destinationImage?.urls?.regular ||
+    doc.destinationImage?.urls?.small ||
+    (typeof doc.destinationImage === "string" ? doc.destinationImage : null);
+
+  return {
+    title: `Custom: ${locations.join(" → ") || "Trip"}`,
+    destination,
+    durationDays,
+    basePrice: doc.adminFinalPrice || 0,
+    category: "custom",
+    tripType: input.tripType || "international",
+    start_date: startDate,
+    end_date: endDate,
+    images: imageUrl ? [imageUrl] : [],
+    includes: [],
+    excludes: [],
+    selectedFlights: doc.selectedFlights || [],
+    selectedHotels: doc.selectedHotels || [],
+    itinerary: doc.itinerary || [],
+    adminFinalPrice: doc.adminFinalPrice || null,
+  };
+};
+
+/**
  * Admin update custom package status (finalized | cancelled)
  */
 export const adminUpdateCustomPackageStatus = async ({
@@ -613,7 +665,7 @@ export const adminUpdateCustomPackageStatus = async ({
     return { requestId: doc.requestId, status: doc.status };
   }
 
-  // finalized
+  // Apply admin's final selections before building the snapshot
   const { selectedFlights, selectedHotels } = finalSelections;
   if (Array.isArray(selectedFlights) && selectedFlights.length > 0) {
     doc.selectedFlights = selectedFlights;
@@ -634,6 +686,43 @@ export const adminUpdateCustomPackageStatus = async ({
   doc.status = "finalized";
   await doc.save();
 
-  return { requestId: doc.requestId, status: doc.status };
+  // Auto-create a unified Booking so custom deals enter the standard workflow
+  const packageSnapshot = buildCustomPackageSnapshot(doc);
+  const numPeople = doc.inputSnapshot?.adults || 1;
+  const totalPrice = doc.adminFinalPrice || 0;
+
+  const booking = await Booking.create({
+    user: doc.userId,
+    bookingType: "custom",
+    package: null,
+    customPackageRef: doc._id,
+    numPeople,
+    packageSnapshot,
+    currency: "PKR",
+    pricePerPerson: numPeople > 0 ? Math.round(totalPrice / numPeople) : totalPrice,
+    totalPrice,
+    savings: 0,
+    travelDate: packageSnapshot.start_date || null,
+    bookingStatus: "Confirmed",
+    payment_status: "pending_payment",
+    notes: `Auto-created from custom package ${doc.requestId}`,
+  });
+
+  // Non-blocking side effects
+  invalidateDashboardCache();
+  User.findById(doc.userId)
+    .select("name email")
+    .lean()
+    .then((user) => {
+      if (user) sendBookingCreatedEmail({ user, booking });
+    })
+    .catch(() => {});
+
+  return {
+    requestId: doc.requestId,
+    status: doc.status,
+    bookingId: booking._id,
+    bookingCode: booking.bookingCode,
+  };
 };
 

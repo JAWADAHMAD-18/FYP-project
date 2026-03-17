@@ -6,9 +6,18 @@ const PackageSnapshotSchema = new mongoose.Schema(
     destination: String,
     durationDays: Number,
     basePrice: Number,
+    category: { type: String, default: null },
+    tripType: { type: String, default: null },
+    start_date: { type: Date, default: null },
+    end_date: { type: Date, default: null },
     images: [String],
     includes: [String],
     excludes: [String],
+    // Custom-package extras (empty for predefined bookings)
+    selectedFlights: { type: Array, default: [] },
+    selectedHotels: { type: Array, default: [] },
+    itinerary: { type: Array, default: [] },
+    adminFinalPrice: { type: Number, default: null },
   },
   { _id: false }
 );
@@ -20,10 +29,22 @@ const BookingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    bookingType: {
+      type: String,
+      enum: ["predefined", "custom"],
+      default: "predefined",
+      required: true,
+      index: true,
+    },
     package: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Package",
-      required: true,
+      default: null,
+    },
+    customPackageRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CustomizePackage",
+      default: null,
     },
     numPeople: {
       type: Number,
@@ -138,6 +159,7 @@ const BookingSchema = new mongoose.Schema(
 BookingSchema.index({ user: 1, bookingDate: -1 });
 BookingSchema.index({ package: 1, bookingStatus: 1 });
 BookingSchema.index({ bookingStatus: 1, paymentStatus: 1 });
+BookingSchema.index({ bookingType: 1, bookingStatus: 1 });
 //pre save hook
 BookingSchema.pre("save", function (next) {
   if (!this.bookingCode) {

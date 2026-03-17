@@ -7,7 +7,10 @@ import { ApiError } from "../utills/apiError.utills.js";
 export const getTravelSummary = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const bookings = await Booking.find({ user: userId })
+  const bookings = await Booking.find({
+    user: userId,
+    bookingStatus: { $ne: "Cancelled" },
+  })
     .populate("package")
     .lean();
 
@@ -28,9 +31,12 @@ export const getTravelSummary = asyncHandler(async (req, res) => {
   const fusionSavings = bookings.reduce((sum, b) => sum + (b.savings || 0), 0);
 
   // Category breakdown
-  const categoryTotals = { accommodations: 0, flights: 0, experiences: 0 };
+  const categoryTotals = { accommodations: 0, flights: 0, experiences: 0, custom: 0 };
   bookings.forEach((b) => {
-    const category = b.package?.category?.toLowerCase();
+    const category =
+      b.packageSnapshot?.category?.toLowerCase() ||
+      b.package?.category?.toLowerCase() ||
+      (b.bookingType === "custom" ? "custom" : null);
     if (category && categoryTotals.hasOwnProperty(category)) {
       categoryTotals[category] += b.totalPrice || 0;
     }

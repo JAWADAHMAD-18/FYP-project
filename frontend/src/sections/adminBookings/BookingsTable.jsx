@@ -20,6 +20,21 @@ function fmtPrice(n) {
   });
 }
 
+const TypeBadge = ({ type }) => {
+  const isCustom = type === "custom";
+  return (
+    <span
+      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+        isCustom
+          ? "bg-amber-50 text-amber-700 border-amber-200"
+          : "bg-teal-50 text-teal-700 border-teal-200"
+      }`}
+    >
+      {isCustom ? "Custom" : "Predefined"}
+    </span>
+  );
+};
+
 export default function BookingsTable({ bookings }) {
   const paymentStatus = (b) =>
     b.payment_status ?? (b.paymentStatus === "Paid" ? "payment_verified" : b.payment_status) ?? "pending_payment";
@@ -35,6 +50,9 @@ export default function BookingsTable({ bookings }) {
             </th>
             <th className="text-left py-4 px-5 font-semibold text-gray-700">
               Package
+            </th>
+            <th className="text-left py-4 px-5 font-semibold text-gray-700">
+              Type
             </th>
             <th className="text-left py-4 px-5 font-semibold text-gray-700">
               User
@@ -66,7 +84,10 @@ export default function BookingsTable({ bookings }) {
                 {b.bookingCode ?? "—"}
               </td>
               <td className="py-4 px-5 text-gray-700">
-                {b.package?.title ?? b.packageSnapshot?.title ?? "—"}
+                {b.packageSnapshot?.title ?? b.package?.title ?? "—"}
+              </td>
+              <td className="py-4 px-5">
+                <TypeBadge type={b.bookingType || "predefined"} />
               </td>
               <td className="py-4 px-5 text-gray-700">
                 {b.user?.name ?? "—"}
@@ -102,9 +123,12 @@ export default function BookingsTable({ bookings }) {
         {bookings.map((b) => (
           <div key={b._id} className="p-5">
             <div className="flex justify-between items-start gap-3 mb-3">
-              <span className="font-mono text-xs text-gray-600">
-                {b.bookingCode ?? "—"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-gray-600">
+                  {b.bookingCode ?? "—"}
+                </span>
+                <TypeBadge type={b.bookingType || "predefined"} />
+              </div>
               <Link
                 to={`/admin/bookings/${b._id}`}
                 className="inline-flex items-center gap-1 text-sm font-medium text-teal-600"
@@ -114,7 +138,7 @@ export default function BookingsTable({ bookings }) {
               </Link>
             </div>
             <p className="font-semibold text-gray-900 mb-1">
-              {b.package?.title ?? b.packageSnapshot?.title ?? "—"}
+              {b.packageSnapshot?.title ?? b.package?.title ?? "—"}
             </p>
             <p className="text-sm text-gray-500 mb-2">{b.user?.name ?? "—"}</p>
             <div className="flex flex-wrap gap-2">

@@ -11,6 +11,8 @@ import {
   UploadCloud,
   ShieldCheck,
   AlertTriangle,
+  Plane,
+  BedDouble,
 } from "lucide-react";
 import TripFusionLoader from "../../components/Loader/TripFusionLoader.jsx";
 import {
@@ -154,6 +156,10 @@ export default function BookingDetail() {
   const durationDays = booking?.packageSnapshot?.durationDays;
   const includes = booking?.packageSnapshot?.includes || [];
   const excludes = booking?.packageSnapshot?.excludes || [];
+  const isCustom = booking?.bookingType === "custom";
+  const snapFlights = booking?.packageSnapshot?.selectedFlights || [];
+  const snapHotels = booking?.packageSnapshot?.selectedHotels || [];
+  const snapItinerary = booking?.packageSnapshot?.itinerary || [];
 
   const paymentBadge =
     paymentStatus === "payment_verified"
@@ -186,9 +192,16 @@ export default function BookingDetail() {
             <h1 className="text-3xl font-black text-[#0A1A44] tracking-tight">
               {title}
             </h1>
-            <p className="text-gray-500 text-sm mt-1 font-medium">
-              {destination}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-gray-500 text-sm font-medium">
+                {destination}
+              </p>
+              {isCustom && (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200">
+                  Custom Trip
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -228,7 +241,9 @@ export default function BookingDetail() {
                     Travel Dates
                   </div>
                   <div className="mt-2 text-sm font-bold text-gray-900">
-                    {fmtDate(booking.travelDate)}
+                    {isCustom && booking?.packageSnapshot?.start_date
+                      ? `${fmtDate(booking.packageSnapshot.start_date)} – ${fmtDate(booking.packageSnapshot.end_date)}`
+                      : fmtDate(booking.travelDate)}
                   </div>
                 </div>
 
@@ -328,6 +343,104 @@ export default function BookingDetail() {
                 </div>
               )}
             </div>
+
+            {/* Custom Trip Details — only for custom bookings */}
+            {isCustom && (snapFlights.length > 0 || snapHotels.length > 0 || snapItinerary.length > 0) && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h2 className="text-base font-black text-[#0A1A44] mb-4">
+                  Custom Trip Details
+                </h2>
+
+                {snapFlights.length > 0 && (
+                  <div className="mb-5">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+                      <Plane size={14} className="text-teal-600" />
+                      Selected Flights
+                    </p>
+                    <div className="space-y-2">
+                      {snapFlights.map((f, i) => {
+                        const price =
+                          typeof f?.price === "object" && f?.price?.total
+                            ? `${f.price.currency ?? "USD"} ${f.price.total}`
+                            : f?.price != null
+                              ? String(f.price)
+                              : "—";
+                        return (
+                          <div key={f?.flightId ?? i} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+                            <p className="text-sm font-bold text-gray-900">
+                              {f?.airline ?? "Flight"} • {price}
+                            </p>
+                            {(f?.duration || f?.stops != null) && (
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {f?.duration ? String(f.duration).replace(/^PT/, "") : ""}
+                                {f?.stops != null ? ` • ${f.stops} stop${f.stops !== 1 ? "s" : ""}` : ""}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {snapHotels.length > 0 && (
+                  <div className="mb-5">
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+                      <BedDouble size={14} className="text-teal-600" />
+                      Selected Hotels
+                    </p>
+                    <div className="space-y-2">
+                      {snapHotels.map((h, i) => {
+                        const priceStr =
+                          typeof h?.price === "object" && h?.price?.total
+                            ? `${h.price.currency ?? "EUR"} ${h.price.total}/night`
+                            : h?.price
+                              ? `${h.price}/night`
+                              : "";
+                        return (
+                          <div key={h?.hotelId ?? i} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+                            <p className="text-sm font-bold text-gray-900">
+                              {h?.name ?? h?.hotelName ?? "Hotel"}
+                            </p>
+                            {priceStr && (
+                              <p className="text-xs text-gray-500 mt-0.5">{priceStr}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {snapItinerary.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+                      Day-by-Day Itinerary
+                    </p>
+                    <div className="space-y-2">
+                      {snapItinerary.map((item, i) => (
+                        <div key={i} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+                          <p className="text-sm font-bold text-teal-700 mb-1">
+                            Day {item?.day ?? i + 1}: {item?.title ?? "—"}
+                          </p>
+                          {Array.isArray(item?.activities) ? (
+                            <ul className="list-disc list-inside text-xs text-gray-600 space-y-0.5">
+                              {item.activities.map((act, j) => (
+                                <li key={j}>{act}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-xs text-gray-600">
+                              {item?.description ?? item?.activity ?? "—"}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-base font-black text-[#0A1A44] mb-4">

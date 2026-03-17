@@ -149,20 +149,26 @@ const validateSelection = (selection, flights, hotels, tripDays) => {
     reasons.push("invalid_selected_ids_length");
   }
 
-  const flightIds = new Set(flights.map((f) => f.id));
-  const hotelIds = new Set(hotels.map((h) => h.id));
-
-  if (
-    Array.isArray(selectedFlightIds) &&
-    !selectedFlightIds.every((id) => flightIds.has(id))
-  ) {
-    reasons.push("hallucinated_flight_ids");
+  // Only validate IDs against source data when source data was available
+  if (flights.length > 0) {
+    const flightIds = new Set(flights.map((f) => f.id));
+    if (
+      Array.isArray(selectedFlightIds) &&
+      selectedFlightIds.length > 0 &&
+      !selectedFlightIds.every((id) => flightIds.has(id))
+    ) {
+      reasons.push("hallucinated_flight_ids");
+    }
   }
-  if (
-    Array.isArray(selectedHotelIds) &&
-    !selectedHotelIds.every((id) => hotelIds.has(id))
-  ) {
-    reasons.push("hallucinated_hotel_ids");
+  if (hotels.length > 0) {
+    const hotelIds = new Set(hotels.map((h) => h.id));
+    if (
+      Array.isArray(selectedHotelIds) &&
+      selectedHotelIds.length > 0 &&
+      !selectedHotelIds.every((id) => hotelIds.has(id))
+    ) {
+      reasons.push("hallucinated_hotel_ids");
+    }
   }
 
   if (!Array.isArray(itinerary) || itinerary.length !== tripDays) {
@@ -197,23 +203,24 @@ const buildFallback = ({
   tripDays,
   destination,
 }) => {
-  const sortedFlights = [...flights].sort((a, b) => {
-    if (a.price !== b.price) return a.price - b.price;
-    return a.durationMinutes - b.durationMinutes;
-  });
+  // Gracefully handle empty flight/hotel arrays from API failures
+  const selectedFlightIds = flights.length > 0
+    ? [...flights]
+        .sort((a, b) => (a.price !== b.price ? a.price - b.price : a.durationMinutes - b.durationMinutes))
+        .slice(0, 2)
+        .map((f) => f.id)
+    : [];
 
-  const selectedFlightIds = sortedFlights.slice(0, 2).map((f) => f.id);
-
-  const sortedHotels = [...hotels].sort((a, b) => {
-    if (a.rating !== b.rating) return b.rating - a.rating;
-    return a.totalStayPrice - b.totalStayPrice;
-  });
-
-  const selectedHotelIds = sortedHotels.slice(0, 2).map((h) => h.id);
+  const selectedHotelIds = hotels.length > 0
+    ? [...hotels]
+        .sort((a, b) => (a.rating !== b.rating ? b.rating - a.rating : a.totalStayPrice - b.totalStayPrice))
+        .slice(0, 2)
+        .map((h) => h.id)
+    : [];
 
   const itinerary = [];
   for (let day = 1; day <= tripDays; day++) {
-    const weatherInfo = weather[day - 1];
+    const weatherInfo = Array.isArray(weather) ? weather[day - 1] : null;
     const weatherSummary = weatherInfo
       ? `Weather: ${weatherInfo.summary || "N/A"}, avg ${weatherInfo.avgTemp || "N/A"}°C, rain chance ${weatherInfo.rainProbability || 0}%`
       : "Weather data unavailable.";
@@ -229,12 +236,18 @@ const buildFallback = ({
     });
   }
 
+  const parts = [];
+  if (selectedFlightIds.length > 0) parts.push("lowest price flights");
+  if (selectedHotelIds.length > 0) parts.push("highest rated hotels");
+  const selectionNote = parts.length > 0
+    ? `Selected ${parts.join(" and ")} via rule-based fallback.`
+    : "No flight or hotel data was available; itinerary generated from destination and weather data.";
+
   return {
     selectedFlightIds,
     selectedHotelIds,
     itinerary,
-    reasoningSummary:
-      "Applied deterministic rule-based selection using lowest price and duration for flights, highest rating and lowest price for hotels, and generated a simple day-wise itinerary based on destination and weather.",
+    reasoningSummary: selectionNote,
   };
 };
 

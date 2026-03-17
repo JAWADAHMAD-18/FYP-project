@@ -14,7 +14,7 @@ import {
 // Get all bookings (admin)
 export const getAllBookings = asyncHandler(async (req, res) => {
   // Optional filters: bookingStatus, paymentStatus, packageId, userId
-  const { bookingStatus, paymentStatus, packageId, userId } = req.query;
+  const { bookingStatus, paymentStatus, packageId, userId, bookingType } = req.query;
 
   const query = {};
 
@@ -22,6 +22,7 @@ export const getAllBookings = asyncHandler(async (req, res) => {
   if (paymentStatus) query.paymentStatus = paymentStatus;
   if (packageId) query.package = packageId;
   if (userId) query.user = userId;
+  if (bookingType) query.bookingType = bookingType;
 
   const bookings = await Booking.find(query)
     .sort({ bookingDate: -1 })
@@ -150,13 +151,14 @@ export const getBookingById = asyncHandler(async (req, res) => {
 
 // Search bookings by packageId, userId, bookingStatus, paymentStatus, or bookingCode
 export const searchBookings = asyncHandler(async (req, res) => {
-  const { packageId, userId, bookingStatus, paymentStatus, q } = req.query;
+  const { packageId, userId, bookingStatus, paymentStatus, bookingType, q } = req.query;
 
   const query = {};
   if (packageId) query.package = packageId;
   if (userId) query.user = userId;
   if (bookingStatus) query.bookingStatus = bookingStatus;
   if (paymentStatus) query.paymentStatus = paymentStatus;
+  if (bookingType) query.bookingType = bookingType;
 
   if (q && q.trim()) {
     const term = q.trim();
