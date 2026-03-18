@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSupportChat } from "../context/useSupportChat";
 import { useAuth } from "../../../context/useAuth";
@@ -9,7 +10,10 @@ import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
 
-function AdminChatLayout() {
+function AdminChatLayout({ navigate: navigateProp }) {
+  const navigateHook = useNavigate();
+  const navigate = navigateProp || navigateHook;
+
   const [confirmModal, setConfirmModal] = useState({
     open: false,
     action: null,
@@ -262,8 +266,7 @@ function AdminChatLayout() {
                               side={m?.senderRole === "admin" ? "right" : "left"}
                               onReply={() => chatInputRef.current?.focus?.()}
                               onViewDetails={(requestId) => {
-                                window.location.href =
-                                  "/admin/custom-package/" + requestId;
+                                navigate("/admin/custom-package/" + requestId);
                               }}
                               onAccept={(requestId) =>
                                 openConfirmModal("accept", requestId)

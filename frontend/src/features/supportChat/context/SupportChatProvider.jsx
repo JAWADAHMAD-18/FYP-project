@@ -2,14 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SupportChatContext } from "./SupportChatContext";
 import { useAuth } from "../../../context/useAuth";
 import { useSupportSocket } from "../hooks/useSupportSocket";
+
 import {
   getAdminConversationWithMessages,
   getAdminConversations,
   getConversationMessages,
 } from "../services/realtimeChatApi";
-import SupportChatButton from "../components/SupportChatButton";
-import SupportChatWindow from "../components/SupportChatWindow";
-import AdminChatLayout from "../components/AdminChatLayout";
 
 function nowIso() {
   return new Date().toISOString();
@@ -647,10 +645,6 @@ export function SupportChatProvider({ children }) {
   return (
     <SupportChatContext.Provider value={value}>
       {children}
-      {/* Global render targets */}
-      {!isAdmin && <SupportChatButton />}
-      {!isAdmin && <SupportChatWindow />}
-      {isAdmin && <AdminChatLayout />}
     </SupportChatContext.Provider>
   );
 }
