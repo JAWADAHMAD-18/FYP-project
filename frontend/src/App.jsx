@@ -4,6 +4,7 @@ import Footer from "./sections/footer/Footer.jsx";
 import Chatbot from "./components/ChatBot/Chatbot.jsx";
 import ScrollToTop from "./components/ScrollToTop.jsx";
 import SupportChatUI from "./features/supportChat/components/SupportChatUI.jsx";
+import { ToastContainer } from "./components/ui/Toast.jsx";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
@@ -23,6 +24,7 @@ function App() {
       <Footer />
       <Chatbot />
       <SupportChatUI />
+      <ToastContainer />
     </div>
   );
 }

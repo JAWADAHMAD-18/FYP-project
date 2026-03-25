@@ -78,6 +78,10 @@ const customizePackageSchema = new Schema(
       type: Date,
       default: null,
     },
+    lastModifiedAt: {
+      type: Date,
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

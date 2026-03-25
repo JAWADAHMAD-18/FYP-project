@@ -46,3 +46,12 @@ export const adminUpdateCustomPackageStatus = async (
   });
   return res.data?.data ?? res.data;
 };
+
+// Partial admin update: only adminFinalPrice, selectedFlights, selectedHotels
+export const adminPartialUpdatePackage = async (requestId, payload) => {
+  const res = await api.patch(
+    `/admin/custom-package/${requestId}/admin-update`,
+    payload
+  );
+  return res.data?.data ?? res.data;
+};

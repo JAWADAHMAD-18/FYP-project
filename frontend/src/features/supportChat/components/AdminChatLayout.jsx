@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSupportChat } from "../context/useSupportChat";
 import { useAuth } from "../../../context/useAuth";
+import { useToast } from "../../../context/ToastContext";
 import { adminUpdateCustomPackageStatus } from "../../../services/customPackage.api";
 import ChatHeader from "./ChatHeader";
 import UsersList from "./UsersList";
@@ -21,6 +22,7 @@ function AdminChatLayout({ navigate: navigateProp }) {
     loading: false,
   });
   const { user } = useAuth();
+  const { addToast } = useToast();
   const {
     isOpen,
     isMinimized,
@@ -45,6 +47,20 @@ function AdminChatLayout({ navigate: navigateProp }) {
     incomingNotification,
     dismissIncomingNotification,
   } = useSupportChat();
+
+  // Navigate, minimize chat, and toast on success. On failure, toast error only.
+  const handleViewPackage = useCallback(
+    (requestId) => {
+      try {
+        navigate("/admin/custom-package/" + requestId);
+        minimizeChat();
+        addToast("Package opened — chat minimized for better view", "success");
+      } catch {
+        addToast("Failed to open package, please try again", "error");
+      }
+    },
+    [navigate, minimizeChat, addToast]
+  );
 
   const listRef = useRef(null);
   const endRef = useRef(null);
@@ -265,9 +281,7 @@ function AdminChatLayout({ navigate: navigateProp }) {
                               message={m}
                               side={m?.senderRole === "admin" ? "right" : "left"}
                               onReply={() => chatInputRef.current?.focus?.()}
-                              onViewDetails={(requestId) => {
-                                navigate("/admin/custom-package/" + requestId);
-                              }}
+                              onViewDetails={handleViewPackage}
                               onAccept={(requestId) =>
                                 openConfirmModal("accept", requestId)
                               }

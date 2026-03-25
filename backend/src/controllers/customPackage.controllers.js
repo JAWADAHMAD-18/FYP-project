@@ -1,6 +1,7 @@
 import { ApiResponse } from "../utills/apiResponse.utills.js";
 import asyncHandler from "../utills/asynchandler.utills.js";
 import { ApiError } from "../utills/apiError.utills.js";
+import CustomizePackage from "../models/customizePackage.model.js";
 import {
   generateCustomPackage,
   confirmCustomPackage,
@@ -125,5 +126,61 @@ export const adminSetCustomPackageStatus = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, "Status updated", result));
-}
-);
+});
+
+// Partial admin update — only whitelisted fields, never snapshots or identifiers
+export const adminPartialUpdateCustomPackage = asyncHandler(async (req, res) => {
+  if (!req.user?.isAdmin) {
+    throw new ApiError(403, "Admin access required");
+  }
+
+  const { requestId } = req.params;
+
+  const doc = await CustomizePackage.findOne({ requestId });
+  if (!doc) throw new ApiError(404, "Custom package not found");
+
+  if (doc.status === "finalized") {
+    throw new ApiError(409, "Cannot update a finalized package");
+  }
+
+  // Build update payload — only whitelisted fields explicitly provided in body
+  const updates = {};
+
+  if (Object.prototype.hasOwnProperty.call(req.body, "adminFinalPrice")) {
+    const price = Number(req.body.adminFinalPrice);
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new ApiError(400, "adminFinalPrice must be a positive number");
+    }
+    updates.adminFinalPrice = price;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(req.body, "selectedFlights")) {
+    if (!Array.isArray(req.body.selectedFlights)) {
+      throw new ApiError(400, "selectedFlights must be an array");
+    }
+    updates.selectedFlights = req.body.selectedFlights;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(req.body, "selectedHotels")) {
+    if (!Array.isArray(req.body.selectedHotels)) {
+      throw new ApiError(400, "selectedHotels must be an array");
+    }
+    updates.selectedHotels = req.body.selectedHotels;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(400, "No valid fields provided for update");
+  }
+
+  updates.lastModifiedAt = new Date();
+
+  const updated = await CustomizePackage.findOneAndUpdate(
+    { requestId },
+    { $set: updates },
+    { new: true }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Package updated successfully", updated));
+});

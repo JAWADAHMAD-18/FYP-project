@@ -6,6 +6,7 @@ import {
   setCustomPackageNegotiating,
   adminGetCustomPackageByRequestId,
   adminSetCustomPackageStatus,
+  adminPartialUpdateCustomPackage,
 } from "../controllers/customPackage.controllers.js";
 
 const router = Router();
@@ -31,6 +32,13 @@ router.patch(
   "/admin/custom-package/:requestId/status",
   verifyAuth,
   adminSetCustomPackageStatus
+);
+
+// Admin: partial update — adminFinalPrice, selectedFlights, selectedHotels only
+router.patch(
+  "/admin/custom-package/:requestId/admin-update",
+  verifyAuth,
+  adminPartialUpdateCustomPackage
 );
 
 // Get a single saved custom package by ID

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { AuthProvider } from "./context/AuthProvider.jsx";
 import { SupportChatProvider } from "./features/supportChat/context/SupportChatProvider.jsx";
+import { ToastProvider } from "./context/ToastContext.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 // Route-level code splitting to avoid loading all pages on first paint
@@ -122,12 +123,14 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <AuthProvider>
-      <SupportChatProvider>
-        <Suspense fallback={<div className="min-h-screen" />}>
-          <RouterProvider router={router} />
-        </Suspense>
-      </SupportChatProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <SupportChatProvider>
+          <Suspense fallback={<div className="min-h-screen" />}>
+            <RouterProvider router={router} />
+          </Suspense>
+        </SupportChatProvider>
+      </AuthProvider>
+    </ToastProvider>
   </StrictMode>,
 );
