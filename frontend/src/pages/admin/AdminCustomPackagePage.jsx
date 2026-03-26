@@ -60,8 +60,7 @@ function InfoGrid({ items }) {
     </div>
   );
 }
-
-/* ─── main page ─────────────────────────────────────────────── */
+//main page component
 const AdminCustomPackagePage = () => {
   const { requestId } = useParams();
   const { addToast } = useToast();
