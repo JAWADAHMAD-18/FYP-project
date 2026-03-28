@@ -48,7 +48,11 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   if (!booking.paymentProof.imageUrl)
     throw new ApiError(400, "No payment proof uploaded");
 
+  // ── Financial truth field (used by revenue, emails, admin decisions) ──
   booking.paymentStatus = "Paid";
+  // ── Workflow state field (used by UI and booking flow) ─────────────────
+  booking.payment_status = "payment_verified";
+
   booking.bookingStatus = "Confirmed";
   booking.paymentProof.verified = true;
   booking.paymentProof.verifiedBy = adminId;
@@ -80,7 +84,10 @@ export const rejectPayment = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(bookingId);
   if (!booking) throw new ApiError(404, "Booking not found");
 
+  // ── Sync both payment fields on rejection ──────────────────────────────
   booking.paymentStatus = "NotPaid";
+  booking.payment_status = "pending_payment";
+
   booking.bookingStatus = "Pending";
   booking.paymentProof.verified = false;
   booking.paymentProof.verifiedBy = adminId;
@@ -112,6 +119,15 @@ export const cancelBookingByAdmin = asyncHandler(async (req, res) => {
   booking.cancelReason = cancelReason || null;
   booking.cancelledAt = new Date();
 
+  // ── Persist refund state BEFORE save so it reaches the database ─────────
+  // Bug fix: previously paymentStatus="Refunded" was set AFTER save() and
+  // was never persisted — refunded bookings incorrectly counted as revenue.
+  const wasAlreadyPaid = booking.paymentStatus === "Paid";
+  if (wasAlreadyPaid) {
+    booking.paymentStatus = "Refunded";     // financial truth — now persisted
+    booking.payment_status = "refunded";    // workflow state — kept in sync
+  }
+
   await booking.save();
   invalidateDashboardCache();
 
@@ -119,10 +135,7 @@ export const cancelBookingByAdmin = asyncHandler(async (req, res) => {
   User.findById(booking.user).select("name email").lean().then((user) => {
     if (user) {
       sendBookingCancelledEmail({ user, booking }); // "Booking Cancelled" email
-      // If payment was already made, also send a refund-initiated email
-      if (booking.paymentStatus === "Paid") {
-        // Update paymentStatus in the local object for the email display
-        booking.paymentStatus = "Refunded";
+      if (wasAlreadyPaid) {
         sendPaymentCancelledEmail({ user, booking }); // "Refund Initiated" email
       }
     }

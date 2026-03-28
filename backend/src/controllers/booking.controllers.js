@@ -133,12 +133,13 @@ export const createBooking = asyncHandler(async (req, res) => {
     session.endSession();
   }
 
-  // Return clean response — future payment fields ready to attach here
+  // Return clean response — both payment fields always included
   const responsePayload = {
     bookingId: booking._id,
     bookingCode: booking.bookingCode,
     bookingStatus: booking.bookingStatus,
-    paymentStatus: booking.paymentStatus,
+    paymentStatus: booking.paymentStatus,       // financial truth
+    payment_status: booking.payment_status,     // workflow state
     numPeople: booking.numPeople,
     pricePerPerson: booking.pricePerPerson,
     totalPrice: booking.totalPrice,
@@ -285,11 +286,14 @@ export const uploadPaymentProof = asyncHandler(async (req, res) => {
   const uploadResult = await cloudinaryImageUpload(req.file.path);
   if (!uploadResult) throw new ApiError(500, "Failed to upload payment proof");
 
+  // ── Workflow state: user has submitted proof, awaiting admin review ────────
+  // IMPORTANT: do NOT touch paymentStatus here — that is the financial truth
+  // field and is only mutated by admin controllers (verifyPayment / rejectPayment).
   booking.payment_proof_url = uploadResult.url;
   booking.payment_note = paymentNote || null;
   booking.payment_status = "payment_submitted";
 
-  // Keep legacy fields in sync (non-breaking for existing UI/admin tools)
+  // Keep legacy paymentProof.imageUrl in sync (admin UI reads this for the proof image)
   booking.paymentProof = booking.paymentProof || {};
   booking.paymentProof.imageUrl = uploadResult.url;
   booking.paymentProof.uploadedAt = new Date();

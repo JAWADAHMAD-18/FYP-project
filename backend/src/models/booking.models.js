@@ -118,10 +118,15 @@ const BookingSchema = new mongoose.Schema(
       },
     },
 
-    // ── Bank transfer proof workflow (new, non-breaking) ────────────────────
+    // ── Bank transfer proof workflow ────────────────────────────────────────
+    // Sync rule: this field must always be updated alongside paymentStatus.
+    // pending_payment  ↔  NotPaid
+    // payment_submitted → proof uploaded, awaiting admin review
+    // payment_verified  ↔  Paid
+    // refunded          ↔  Refunded
     payment_status: {
       type: String,
-      enum: ["pending_payment", "payment_submitted", "payment_verified"],
+      enum: ["pending_payment", "payment_submitted", "payment_verified", "refunded"],
       default: "pending_payment",
     },
     payment_proof_url: {
@@ -159,6 +164,7 @@ const BookingSchema = new mongoose.Schema(
 BookingSchema.index({ user: 1, bookingDate: -1 });
 BookingSchema.index({ package: 1, bookingStatus: 1 });
 BookingSchema.index({ bookingStatus: 1, paymentStatus: 1 });
+BookingSchema.index({ payment_status: 1 }); // workflow state queries
 BookingSchema.index({ bookingType: 1, bookingStatus: 1 });
 //pre save hook
 BookingSchema.pre("save", function (next) {
