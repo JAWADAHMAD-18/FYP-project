@@ -10,12 +10,16 @@ const formatDate = (dateString) => {
   });
 };
 
-const PackageCard = ({ packageData }) => {
+const PackageCard = ({ packageData, isExpired = false }) => {
   const navigate = useNavigate();
 
   return (
     <div
-      className="group max-w-sm transition-all duration-500 hover:-translate-y-2"
+      className={`${
+        isExpired
+          ? "max-w-sm transition-all duration-500 opacity-50 grayscale cursor-default"
+          : "group max-w-sm transition-all duration-500 hover:-translate-y-2"
+      }`}
       style={{
         padding: "2px",
         borderRadius: "1rem",
@@ -33,12 +37,21 @@ const PackageCard = ({ packageData }) => {
             className="w-full h-56 object-cover transition-transform duration-700 group-hover:scale-110"
           />
 
-          {packageData.available && (
+          {packageData.available && !isExpired && (
             <span
               className="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full text-white"
               style={{ backgroundColor: "#0D9488" }}
             >
               ● Available
+            </span>
+          )}
+
+          {isExpired && (
+            <span
+              className="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full text-white"
+              style={{ backgroundColor: "#B91C1C" }}
+            >
+              Expired
             </span>
           )}
         </div>
@@ -122,11 +135,17 @@ const PackageCard = ({ packageData }) => {
               onClick={() => {
                 if (packageData?._id) navigate(`/packages/${packageData._id}`);
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#0D9488")
+              onMouseEnter={
+                isExpired
+                  ? undefined
+                  : (e) =>
+                      (e.currentTarget.style.backgroundColor = "#0D9488")
               }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#0A1A44")
+              onMouseLeave={
+                isExpired
+                  ? undefined
+                  : (e) =>
+                      (e.currentTarget.style.backgroundColor = "#0A1A44")
               }
             >
               View Details

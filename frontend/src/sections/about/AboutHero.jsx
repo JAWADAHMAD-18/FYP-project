@@ -33,7 +33,7 @@ export default function AboutHero() {
           viewport={{ once: true, amount: 0.3 }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-white mb-6"
         >
-          About AI Travel Agency
+          About TripFusion
         </motion.h1>
         <motion.p
           variants={fadeUp}

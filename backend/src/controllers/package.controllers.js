@@ -42,10 +42,30 @@ const normalizeMedia = (pkg) => {
   };
 };
 
+// Helper: returns true if a package is active (available=true AND start_date >= today)
+const isPackageActive = (pkg, today) => {
+  return pkg.available === true && new Date(pkg.start_date) >= today;
+};
+
+// Helper: JS-level sort for admin — active packages first, expired at bottom,
+// secondary sort by start_date ascending within each group.
+const adminSort = (packages, today) => {
+  return [...packages].sort((a, b) => {
+    const aActive = isPackageActive(a, today);
+    const bActive = isPackageActive(b, today);
+    if (aActive && !bActive) return -1;
+    if (!bActive && aActive) return 1;
+    return new Date(a.start_date) - new Date(b.start_date);
+  });
+};
+
 // Get a single package by ID
 export const getPackage = asyncHandler(async (req, res) => {
   const { packageId } = req.params;
-  const cacheKey = generateKey("package:details", packageId);
+  const isAdmin = req.user?.isAdmin === true;
+  const cacheKey = isAdmin
+    ? generateKey("package:details:admin", packageId)
+    : generateKey("package:details:user", packageId);
 
   // Check cache
   const cachedPackage = await getCache(cacheKey);
@@ -69,6 +89,16 @@ export const getPackage = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Package not found");
   }
 
+  // Guest/user: hide expired or unavailable packages entirely (return 404 so
+  // existence is not revealed)
+  if (!isAdmin) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (!isPackageActive(packageData, today)) {
+      throw new ApiError(404, "Package not found");
+    }
+  }
+
   const normalized = normalizeMedia(packageData);
 
   //  Save to cache (1 hour)
@@ -81,7 +111,8 @@ export const getPackage = asyncHandler(async (req, res) => {
 
 // Get all packages (no pagination)
 export const getAllPackages = asyncHandler(async (req, res) => {
-  const cacheKey = "packages:all";
+  const isAdmin = req.user?.isAdmin === true;
+  const cacheKey = isAdmin ? "packages:all:admin" : "packages:all:user";
 
   const cached = await getCache(cacheKey);
   if (cached) {
@@ -92,10 +123,28 @@ export const getAllPackages = asyncHandler(async (req, res) => {
       );
   }
 
-  const packages = await Package.find()
-    .select(PUBLIC_PACKAGE_SELECT)
-    .sort({ createdAt: -1 })
-    .lean();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let packages;
+
+  if (isAdmin) {
+    // Admin: fetch ALL packages, then JS-sort active on top, expired at bottom
+    const all = await Package.find()
+      .select(PUBLIC_PACKAGE_SELECT)
+      .lean();
+
+    packages = adminSort(all, today);
+  } else {
+    // Guest / regular user: only active future packages
+    packages = await Package.find({
+      available: true,
+      start_date: { $gte: today },
+    })
+      .select(PUBLIC_PACKAGE_SELECT)
+      .sort({ start_date: 1 })
+      .lean();
+  }
 
   const responseData = {
     packages: packages.map(normalizeMedia),
@@ -112,9 +161,12 @@ export const getAllPackages = asyncHandler(async (req, res) => {
     );
 });
 
-// Get active packages (available=true and end_date > now)
+// Get active packages (available=true and start_date >= today)
 export const getActivePackages = asyncHandler(async (req, res) => {
-  const cacheKey = "packages:active";
+  const isAdmin = req.user?.isAdmin === true;
+  const cacheKey = isAdmin
+    ? "packages:active:admin"
+    : "packages:active:user";
 
   const cached = await getCache(cacheKey);
   if (cached) {
@@ -129,17 +181,30 @@ export const getActivePackages = asyncHandler(async (req, res) => {
       );
   }
 
-  const currentDate = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const packages = await Package.find({
-    available: true,
-    end_date: { $gt: currentDate },
-  })
-    .select(PUBLIC_PACKAGE_SELECT)
-    .sort({ start_date: 1 })
-    .lean();
+  let data;
 
-  const data = packages.map(normalizeMedia);
+  if (isAdmin) {
+    // Admin: fetch ALL, sort active on top, expired at bottom
+    const all = await Package.find()
+      .select(PUBLIC_PACKAGE_SELECT)
+      .lean();
+
+    data = adminSort(all, today).map(normalizeMedia);
+  } else {
+    // Guest / regular user: only available + future start_date
+    const packages = await Package.find({
+      available: true,
+      start_date: { $gte: today },
+    })
+      .select(PUBLIC_PACKAGE_SELECT)
+      .sort({ start_date: 1 })
+      .lean();
+
+    data = packages.map(normalizeMedia);
+  }
 
   // Cache for 10 minutes
   await setCache(cacheKey, data, 600);
@@ -160,7 +225,10 @@ export const getPackagesByType = asyncHandler(async (req, res) => {
     );
   }
 
-  const cacheKey = generateKey("packages:type", tripType);
+  const isAdmin = req.user?.isAdmin === true;
+  const cacheKey = isAdmin
+    ? generateKey(`packages:type:${tripType}`, "admin")
+    : generateKey(`packages:type:${tripType}`, "user");
 
   const cached = await getCache(cacheKey);
   if (cached) {
@@ -175,18 +243,31 @@ export const getPackagesByType = asyncHandler(async (req, res) => {
       );
   }
 
-  const currentDate = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const packages = await Package.find({
-    trip_type: tripType,
-    available: true,
-    end_date: { $gt: currentDate },
-  })
-    .select(PUBLIC_PACKAGE_SELECT)
-    .sort({ start_date: 1 })
-    .lean();
+  let data;
 
-  const data = packages.map(normalizeMedia);
+  if (isAdmin) {
+    // Admin: fetch all packages of this trip type, sort active on top
+    const all = await Package.find({ trip_type: tripType })
+      .select(PUBLIC_PACKAGE_SELECT)
+      .lean();
+
+    data = adminSort(all, today).map(normalizeMedia);
+  } else {
+    // Guest / regular user: only available + future start_date for this trip type
+    const packages = await Package.find({
+      trip_type: tripType,
+      available: true,
+      start_date: { $gte: today },
+    })
+      .select(PUBLIC_PACKAGE_SELECT)
+      .sort({ start_date: 1 })
+      .lean();
+
+    data = packages.map(normalizeMedia);
+  }
 
   // Cache for 10 minutes
   await setCache(cacheKey, data, 600);

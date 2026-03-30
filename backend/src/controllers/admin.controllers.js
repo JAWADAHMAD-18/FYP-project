@@ -10,12 +10,19 @@ import { deleteCache, generateKey } from "../utills/localRedis.utills.js";
 // Invalidate package caches for listing and detail
 const invalidatePackageCaches = async (packageId) => {
   await Promise.all([
-    deleteCache("packages:all"),
-    deleteCache("packages:active"),
-    deleteCache(generateKey("packages:type", "domestic")),
-    deleteCache(generateKey("packages:type", "international")),
+    deleteCache(generateKey("packages:all", "admin")),
+    deleteCache(generateKey("packages:all", "user")),
+    deleteCache(generateKey("packages:active", "admin")),
+    deleteCache(generateKey("packages:active", "user")),
+    deleteCache(generateKey("packages:type:domestic", "admin")),
+    deleteCache(generateKey("packages:type:domestic", "user")),
+    deleteCache(generateKey("packages:type:international", "admin")),
+    deleteCache(generateKey("packages:type:international", "user")),
     ...(packageId
-      ? [deleteCache(generateKey("package:details", packageId))]
+      ? [
+          deleteCache(generateKey("package:details:admin", packageId)),
+          deleteCache(generateKey("package:details:user", packageId)),
+        ]
       : []),
   ]);
 };
