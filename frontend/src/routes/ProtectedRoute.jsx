@@ -4,7 +4,8 @@ import { useAuth } from "../context/useAuth.js";
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
 
-  // Jab tak refresh-token / auth check ho rahi hai
+  // Wait for the refresh-token / session restore flow to finish
+  // before making ANY redirect decision — avoids premature navigation
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -13,12 +14,18 @@ const ProtectedRoute = () => {
     );
   }
 
-  // Agar user login nahi
+  // Not authenticated → send to login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Agar login hai → allow route
+  // Admin users must not access user-only routes.
+  // Redirect them to their own dashboard (works on fresh login AND page refresh).
+  if (user.isAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // Authenticated regular user → allow through
   return <Outlet />;
 };
 
