@@ -185,3 +185,65 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, { user }, "User data retrieved successfully"));
 });
+
+export const updateUserProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  // Explicitly strip email — never allow updating email via this endpoint
+  const { email: _blocked, name, phone } = req.body;
+
+  // Build update object — only include fields that were actually sent
+  const updates = {};
+
+  // Validate and add name if provided
+  if (name !== undefined) {
+    const trimmedName = String(name).trim();
+    if (trimmedName.length < 3) {
+      throw new ApiError(400, "Name must be at least 3 characters long");
+    }
+    updates.name = trimmedName;
+  }
+
+  // Validate and add phone if provided (optional but must be valid format)
+  if (phone !== undefined) {
+    const trimmedPhone = String(phone).trim();
+    if (trimmedPhone !== "") {
+      const phoneRegex = /^[+]?[\d\s\-().]{7,20}$/;
+      if (!phoneRegex.test(trimmedPhone)) {
+        throw new ApiError(400, "Phone number format is invalid");
+      }
+      updates.phone = trimmedPhone;
+    } else {
+      // Allow clearing phone
+      updates.phone = "";
+    }
+  }
+
+  // Handle profile picture upload if a file was sent
+  if (req.file?.path) {
+    const uploadResult = await cloudinaryImageUpload(req.file.path);
+    if (!uploadResult?.url) {
+      throw new ApiError(500, "Failed to upload profile picture");
+    }
+    updates.profilePic = uploadResult.url;
+  }
+
+  // Nothing to update?
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(400, "No valid fields provided for update");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { $set: updates },
+    { new: true, runValidators: true }
+  ).select("-password -refreshToken");
+
+  if (!updatedUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user: updatedUser }, "Profile updated successfully"));
+});

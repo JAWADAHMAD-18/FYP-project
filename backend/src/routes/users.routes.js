@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { registerUser, loginUser, refreshAccessToken, logoutUser, getCurrentUser } from "../controllers/users.controllers.js";
+import { registerUser, loginUser, refreshAccessToken, logoutUser, getCurrentUser, updateUserProfile } from "../controllers/users.controllers.js";
 import { upload } from "../middleware/cloudinary.middleware.js";
 import verifyAuth from "../middleware/auth.middleware.js";
 
@@ -23,5 +23,6 @@ router.route("/refresh-token").post(authLimiter, refreshAccessToken);
 // Protected routes (auth required - req.user populated by verifyAuth)
 router.route("/logout").post(verifyAuth, logoutUser);
 router.route("/me").get(verifyAuth, getCurrentUser);
+router.route("/profile-update").patch(verifyAuth, upload.single("profilePic"), updateUserProfile);
 
 export default router;

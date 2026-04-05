@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Heart, ArrowRight, Settings, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
 import TripFusionLoader from "../../components/Loader/TripFusionLoader";
 import {
@@ -11,6 +12,7 @@ import { getPackageById } from "../../services/package.service.js";
 
 const UserJourney = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [favoritePackages, setFavoritePackages] = useState([]);
 
   const [loadingFavorites, setLoadingFavorites] = useState(false);
@@ -89,7 +91,11 @@ const UserJourney = () => {
                 <p className="text-sm text-gray-500">{user.email}</p>
               </div>
 
-              <button className="ml-auto p-2 text-gray-400 hover:text-teal-600 transition-colors">
+              <button
+                onClick={() => navigate("/profile/settings")}
+                className="ml-auto p-2 text-gray-400 hover:text-teal-600 transition-colors"
+                aria-label="Go to profile settings"
+              >
                 <Settings size={20} />
               </button>
             </div>

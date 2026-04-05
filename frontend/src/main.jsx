@@ -33,6 +33,7 @@ const AdminBookingDetail = lazy(
   () => import("./pages/admin/AdminBookingDetail.jsx"),
 );
 const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
+const ProfileSettings = lazy(() => import("./pages/ProfileSettings.jsx"));
 
 const router = createBrowserRouter([
   {
@@ -66,6 +67,16 @@ const router = createBrowserRouter([
           {
             path: "bookings/:id",
             element: <BookingDetail />,
+          },
+        ],
+      },
+      {
+        path: "profile",
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: "settings",
+            element: <ProfileSettings />,
           },
         ],
       },
