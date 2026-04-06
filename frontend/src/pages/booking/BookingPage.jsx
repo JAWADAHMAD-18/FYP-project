@@ -114,10 +114,18 @@ export default function BookingPage() {
         numPeople,
       });
       setBookingSuccess(true);
-      // Pass savings through router state so Dashboard can show the loyalty toast
+      // Pass savings through router state so Booking Detail can show the loyalty toast
       const savings = result?.savings ?? 0;
+      const bookingId = result?._id || result?.bookingId;
+
       setTimeout(
-        () => navigate("/dashboard", { state: { newBookingSavings: savings } }),
+        () =>
+          navigate(
+            bookingId ? `/dashboard/bookings/${bookingId}` : "/dashboard",
+            {
+              state: { newBookingSavings: savings },
+            },
+          ),
         1200,
       );
     } catch (err) {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -19,6 +19,7 @@ import {
   getMyBookingById,
   uploadPaymentProof,
 } from "../../services/booking.service.js";
+import SavingsToast from "../../components/dashboard/SavingsToasts";
 
 function fmtDate(d) {
   if (!d) return "—";
@@ -39,6 +40,8 @@ function fmtPrice(n) {
 
 export default function BookingDetail() {
   const { id } = useParams();
+  const location = useLocation();
+  const paymentSectionRef = useRef(null);
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,6 +51,11 @@ export default function BookingDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [toastSavings] = useState(() => location.state?.newBookingSavings ?? null);
+  const [showToast, setShowToast] = useState(() => {
+    const val = location.state?.newBookingSavings;
+    return typeof val === "number" && val > 0;
+  });
   const isSubmittingRef = useRef(false);
 
   useEffect(() => {
@@ -81,6 +89,11 @@ export default function BookingDetail() {
 
   const paymentStatus = booking?.payment_status || "pending_payment";
   const bookingStatus = booking?.bookingStatus || "Pending";
+  const persistedPaymentProof = booking?.paymentProof || null;
+  const persistedPaymentNote = booking?.payment_note || booking?.paymentNote || "";
+  const canUploadPaymentProof = ["pending_payment", "refunded", "payment_failed"].includes(
+    paymentStatus,
+  );
 
   const previewUrl = useMemo(() => {
     if (!file) return null;
@@ -92,6 +105,26 @@ export default function BookingDetail() {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    if (loading || error || !booking) return;
+    paymentSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [loading, error, booking]);
+
+  useEffect(() => {
+    const hasSavingsInState = typeof location.state?.newBookingSavings === "number";
+    if (hasSavingsInState) {
+      window.history.replaceState({}, document.title, window.location.href);
+    }
+  }, [location.state]);
+
+  const handleCloseToast = () => {
+    setShowToast(false);
+    window.history.replaceState({}, document.title, window.location.href);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -166,7 +199,19 @@ export default function BookingDetail() {
       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
       : paymentStatus === "payment_submitted"
         ? "bg-blue-50 text-blue-700 border-blue-200"
+        : paymentStatus === "payment_failed" || paymentStatus === "refunded"
+          ? "bg-red-50 text-red-700 border-red-200"
         : "bg-amber-50 text-amber-700 border-amber-200";
+  const paymentStatusLabel =
+    paymentStatus === "pending_payment"
+      ? "Pending Payment"
+      : paymentStatus === "payment_submitted"
+        ? "Under Review"
+        : paymentStatus === "payment_verified"
+          ? "Confirmed"
+          : paymentStatus === "payment_failed" || paymentStatus === "refunded"
+            ? "Retry Required"
+            : paymentStatus.replaceAll("_", " ");
 
   return (
     <motion.div
@@ -175,6 +220,10 @@ export default function BookingDetail() {
       transition={{ duration: 0.25 }}
       className="min-h-screen bg-[#F8FAFC]"
     >
+      {showToast && toastSavings > 0 && (
+        <SavingsToast savings={toastSavings} onClose={handleCloseToast} />
+      )}
+
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-10">
         <Link
           to="/dashboard"
@@ -211,7 +260,7 @@ export default function BookingDetail() {
             <span
               className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border ${paymentBadge}`}
             >
-              {paymentStatus.replaceAll("_", " ")}
+              {paymentStatusLabel}
             </span>
           </div>
         </div>
@@ -491,7 +540,11 @@ export default function BookingDetail() {
 
           {/* Right: Payment proof upload */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-28">
+            <div
+              id="payment-section"
+              ref={paymentSectionRef}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-28"
+            >
               <div className="flex items-center gap-2 mb-4">
                 <CreditCard size={18} className="text-teal-600" />
                 <h2 className="text-base font-black text-[#0A1A44]">
@@ -499,11 +552,67 @@ export default function BookingDetail() {
                 </h2>
               </div>
 
+              {paymentStatus === "pending_payment" && (
+                <div className="mb-4 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2.5 text-xs text-amber-700 font-medium">
+                  <ShieldCheck size={14} className="flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p>⚡ Pay now to confirm your trip faster</p>
+                    <p className="mt-1">
+                      Bookings are confirmed only after payment verification.
+                      Early payment ensures availability.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {paymentStatus === "payment_submitted" && (
                 <div className="mb-4 flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2.5 text-xs text-blue-700 font-medium">
                   <ShieldCheck size={14} className="flex-shrink-0 mt-0.5" />
-                  Payment proof submitted successfully. Waiting for admin
-                  verification.
+                  Your payment is under review. This usually takes a few hours.
+                </div>
+              )}
+
+              {paymentStatus === "payment_verified" && (
+                <div className="mb-4 flex items-start gap-2 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2.5 text-xs text-emerald-700 font-medium">
+                  <ShieldCheck size={14} className="flex-shrink-0 mt-0.5" />
+                  ✅ Your booking is confirmed
+                </div>
+              )}
+
+              {paymentStatus === "refunded" && (
+                <div className="mb-4 flex items-start gap-2 rounded-lg bg-red-50 border border-red-100 px-3 py-2.5 text-xs text-red-700 font-medium">
+                  <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                  Your payment was not approved. Please upload a valid proof
+                  again.
+                </div>
+              )}
+
+              {persistedPaymentProof && (
+                <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50/70 p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                      Last uploaded proof
+                    </p>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${paymentBadge}`}
+                    >
+                      {paymentStatusLabel}
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-100 overflow-hidden bg-white">
+                    <img
+                      src={persistedPaymentProof}
+                      alt="Uploaded payment proof"
+                      className="w-full h-40 object-cover"
+                    />
+                  </div>
+
+                  {persistedPaymentNote && (
+                    <div className="mt-2 text-xs text-gray-600 rounded-lg bg-white border border-gray-100 px-3 py-2">
+                      {persistedPaymentNote}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -544,7 +653,7 @@ export default function BookingDetail() {
                   <input
                     type="file"
                     accept="image/jpeg,image/jpg,image/png,image/webp"
-                    disabled={paymentStatus !== "pending_payment" || submitting}
+                    disabled={!canUploadPaymentProof || submitting}
                     onChange={(e) => {
                       const f = e.target.files?.[0] || null;
                       setFile(f);
@@ -572,7 +681,7 @@ export default function BookingDetail() {
                   <textarea
                     rows={4}
                     value={note}
-                    disabled={paymentStatus !== "pending_payment" || submitting}
+                    disabled={!canUploadPaymentProof || submitting}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="If you want to leave a message (for example: transaction reference or notes), you can add it here."
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-300 disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -581,13 +690,13 @@ export default function BookingDetail() {
 
                 <button
                   type="submit"
-                  disabled={paymentStatus !== "pending_payment" || submitting}
+                  disabled={!canUploadPaymentProof || submitting}
                   className={`
                     w-full flex items-center justify-center gap-2
                     px-6 py-3.5 rounded-xl text-sm font-black tracking-wide
                     transition-all duration-200 shadow-md
                     ${
-                      paymentStatus !== "pending_payment"
+                      !canUploadPaymentProof
                         ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                         : submitting
                           ? "bg-indigo-400 text-white cursor-wait"
