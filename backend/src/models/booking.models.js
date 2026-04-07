@@ -58,7 +58,7 @@ const BookingSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      default: "USD",
+      default: "PKR",
     },
     pricePerPerson: {
       type: Number,

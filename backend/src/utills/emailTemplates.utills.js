@@ -5,7 +5,7 @@ const BG_COLOR = "#F8FAFC";
 const BORDER_COLOR = "#E2E8F0";
 
 const formatPrice = (amount) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "PKR" }).format(
     amount ?? 0
   );
 
@@ -267,7 +267,7 @@ export const paymentApprovedEmailTemplate = ({ user, booking, dashboardUrl }) =>
       <tr><td>
         <p style="font-size:13px; color:#1E40AF; line-height:1.7;">
           🏦 Your payment of <strong>${
-            new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(booking.totalPrice ?? 0)
+            new Intl.NumberFormat("en-US", { style: "currency", currency: "PKR" }).format(booking.totalPrice ?? 0)
           }</strong> has been received and recorded. Keep this email as your payment confirmation receipt.
         </p>
       </td></tr>
@@ -328,7 +328,7 @@ export const paymentCancelledEmailTemplate = ({ user, booking, dashboardUrl }) =
       <tr><td>
         <p style="font-size:13px; color:#5B21B6; line-height:1.7;">
           🔄 Refund Amount: <strong>${
-            new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(booking.totalPrice ?? 0)
+            new Intl.NumberFormat("en-US", { style: "currency", currency: "PKR" }).format(booking.totalPrice ?? 0)
           }</strong><br/>
           Please allow <strong>5–7 business days</strong> for the refund to reflect in your account. If you have questions, reach out from your dashboard.
         </p>

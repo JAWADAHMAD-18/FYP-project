@@ -21,10 +21,10 @@ const resolvePrice = (offers) => {
     const amt = parseFloat(first.total);
     return isNaN(amt)
       ? null
-      : { amount: amt, currency: first.currency ?? "USD" };
+      : { amount: amt, currency: first.currency ?? "PKR" };
   }
   const amt = parseFloat(first);
-  return isNaN(amt) ? null : { amount: amt, currency: "USD" };
+  return isNaN(amt) ? null : { amount: amt, currency: "PKR" };
 };
 
 /**

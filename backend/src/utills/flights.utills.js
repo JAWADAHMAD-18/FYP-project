@@ -43,7 +43,7 @@ export const searchFlights = withCache(
     departureDate,
     returnDate,
     adults = 1,
-    currency = "USD",
+    currency = "PKR",
   }) => {
     if (!originCity || !destinationCity) {
       throw new ApiError(400, "Origin and destination cities are required");

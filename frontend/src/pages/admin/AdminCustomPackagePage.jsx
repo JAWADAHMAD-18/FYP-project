@@ -399,7 +399,7 @@ const AdminCustomPackagePage = () => {
                   {snapshotFlights.map((f, i) => {
                     const price =
                       typeof f?.price === "object" && f?.price?.total
-                        ? `${f.price.currency ?? "USD"} ${f.price.total}`
+                        ? `${f.price.currency ?? "PKR"} ${f.price.total}`
                         : f?.price ? String(f.price) : "—";
                     return (
                       <div key={f?.flightId ?? i} className="p-4 rounded-xl border border-gray-100 bg-gray-50/30">

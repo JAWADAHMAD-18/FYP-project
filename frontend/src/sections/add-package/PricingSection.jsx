@@ -12,7 +12,7 @@ const PricingSection = ({ register, errors, watch }) => {
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <NumberInput
-          label="Price (USD)"
+          label="Price (PKR)"
           name="price"
           register={register}
           errors={errors}

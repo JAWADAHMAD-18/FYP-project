@@ -17,10 +17,10 @@ function fmtDate(d) {
   });
 }
 
-function fmtPrice(n, currency = "USD") {
+function fmtPrice(n, currency = "PKR") {
   return Number(n ?? 0).toLocaleString("en-US", {
     style: "currency",
-    currency: currency || "USD",
+    currency: currency || "PKR",
     maximumFractionDigits: 0,
   });
 }

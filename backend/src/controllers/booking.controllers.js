@@ -101,7 +101,7 @@ export const createBooking = asyncHandler(async (req, res) => {
             package: packageId,
             numPeople: parsedNumPeople,
             packageSnapshot,
-            currency: "USD",
+            currency: "PKR",
             pricePerPerson,
             totalPrice,
             savings,

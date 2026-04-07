@@ -31,7 +31,7 @@ function fmtDate(d) {
 function fmtPrice(n) {
   return Number(n || 0).toLocaleString("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "PKR",
     maximumFractionDigits: 0,
   });
 }

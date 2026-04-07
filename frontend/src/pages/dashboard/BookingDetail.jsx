@@ -33,7 +33,7 @@ function fmtDate(d) {
 function fmtPrice(n) {
   return Number(n || 0).toLocaleString("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "PKR",
     maximumFractionDigits: 0,
   });
 }
@@ -410,7 +410,7 @@ export default function BookingDetail() {
                       {snapFlights.map((f, i) => {
                         const price =
                           typeof f?.price === "object" && f?.price?.total
-                            ? `${f.price.currency ?? "USD"} ${f.price.total}`
+                            ? `${f.price.currency ?? "PKR"} ${f.price.total}`
                             : f?.price != null
                               ? String(f.price)
                               : "—";

@@ -42,9 +42,9 @@ const fmtTime = (dt) => {
 const fmtPrice = (price, currency) => {
   if (price == null) return "—";
   if (typeof price === "object") {
-    return `${price.currency ?? currency ?? "USD"} ${Number(price.total).toFixed(2)}`;
+    return `${price.currency ?? currency ?? "PKR"} ${Number(price.total).toFixed(2)}`;
   }
-  return `${currency ?? "USD"} ${Number(price).toFixed(2)}`;
+  return `${currency ?? "PKR"} ${Number(price).toFixed(2)}`;
 };
 
 const CABIN_LABEL = {
