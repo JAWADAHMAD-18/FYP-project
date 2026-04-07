@@ -6,15 +6,14 @@ import {
   getFavoriteCount
 } from "../controllers/favorite.controller.js";
 import verifyAuth from "../middleware/auth.middleware.js";
+import { apiLimiter } from "../utills/rateLimiter.utills.js";
 
 const router = Router();
 
-router.get("/", verifyAuth,getUserFavorites);
-
-router.post("/add-favorite",verifyAuth ,addToFavorite);
-
-router.delete("/:packageId", verifyAuth,removeFromFavorite);
-router.get("/count", verifyAuth, getFavoriteCount);
-
+// Favorite routes hit the DB for user-specific data — apiLimiter is sufficient.
+router.get("/", apiLimiter, verifyAuth, getUserFavorites);
+router.post("/add-favorite", apiLimiter, verifyAuth, addToFavorite);
+router.delete("/:packageId", apiLimiter, verifyAuth, removeFromFavorite);
+router.get("/count", apiLimiter, verifyAuth, getFavoriteCount);
 
 export default router;

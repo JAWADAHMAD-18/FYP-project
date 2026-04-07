@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { apiLimiter, rateLimitInfoMiddleware } from "./utills/rateLimiter.utills.js";
 
 const app = express();
 app.use(
@@ -13,6 +14,13 @@ app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static("public"));
+
+// Global rate limiting — applied to all /api/* routes as a safety fallback.
+// Per-route limiters (authLimiter, chatLimiter, etc.) take precedence when mounted
+// directly on individual handlers, so this only kicks in for routes that aren't
+// explicitly limited elsewhere.
+app.use("/api", apiLimiter);
+app.use("/api", rateLimitInfoMiddleware);
 
 // Routes imports
 

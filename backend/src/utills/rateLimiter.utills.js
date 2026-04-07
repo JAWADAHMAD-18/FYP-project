@@ -1,13 +1,6 @@
-/**
- * Production-Ready Rate Limiter
- * 
- * Enterprise-level, Redis-enabled, dynamic rate limiting utility.
- * Combines flexible dev settings with production robustness.
- */
-
+import { redisClient } from '../config/redis.config.js';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import { createClient } from 'redis';
 import { ApiError } from '../utills/apiError.utills.js';
 
 // ==================== CONFIGURATION ====================
@@ -27,15 +20,12 @@ const WHITELIST_IPS = (process.env.RATE_LIMIT_WHITELIST || '')
 let redisStore = null;
 if (process.env.REDIS_URL && isProduction) {
   try {
-    const redisClient = createClient({ url: process.env.REDIS_URL });
-    redisClient.connect().catch(console.error);
-
     redisStore = new RedisStore({
       client: redisClient,
-      prefix: 'rl:travel-chatbot:',
+      prefix: 'rl:tripfusion:',
     });
   } catch (err) {
-    console.error('Redis connection failed, using memory store:', err);
+    console.error('Redis store init failed, using memory store:', err);
   }
 }
 
@@ -52,14 +42,14 @@ const generateKey = (req) => {
   return req.user?.id ? `${req.ip}-${req.user.id}` : req.ip;
 };
 
-const rateLimitHandler = (req, res) => {
+const rateLimitHandler = (req, res, next) => {
   const resetTime = new Date(req.rateLimit?.resetTime || Date.now() + 60000);
   const minutesRemaining = Math.ceil((resetTime - Date.now()) / 60000);
 
-  throw new ApiError(
+  next(new ApiError(
     429,
     `Too many requests. Please try again in ${minutesRemaining} minute(s).`
-  );
+  ));
 };
 
 // Middleware to add rate limit info to responses

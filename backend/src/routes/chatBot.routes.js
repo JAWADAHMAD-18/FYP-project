@@ -1,25 +1,22 @@
-
-
 import express from 'express';
-const router = express.Router();
-
 import {
   handleChat,
   getSessionHistory,
   deleteSession,
   healthCheck
 } from '../controllers/chatBot.controller.js';
+import { chatLimiter, apiLimiter } from '../utills/rateLimiter.utills.js';
 
-// Health check route
+const router = express.Router();
+
+// Health check route — skip limiter for load balancers/monitoring
 router.get('/health', healthCheck);
 
-// Main chat route
-router.post('/chat', handleChat);
+// Main chat route — hits Gemini AI
+router.post('/chat', chatLimiter, handleChat);
 
-// Get session history
-router.get('/session/:sessionId', getSessionHistory);
-
-// Delete/clear session
-router.delete('/session/:sessionId', deleteSession);
+// Session routes — DB lookups
+router.get('/session/:sessionId', apiLimiter, getSessionHistory);
+router.delete('/session/:sessionId', apiLimiter, deleteSession);
 
 export default router;
