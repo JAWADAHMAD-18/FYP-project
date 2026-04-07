@@ -6,6 +6,7 @@ import { createClient } from "redis";
 const redisClient = createClient({
   url: process.env.REDIS_URL,
   socket: {
+    tls:true,
     reconnectStrategy: (retries) => {
       if (retries > 2) {
         console.error("❌ Redis: Too many reconnection attempts");
