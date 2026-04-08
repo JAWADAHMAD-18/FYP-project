@@ -12,3 +12,8 @@ export const resetPasswordApi = async (token, newPassword) => {
   );
   return res.data;
 };
+
+export const googleAuthApi = async (idToken) => {
+  const res = await api.post("/user/auth/google", { idToken });
+  return res.data;
+};

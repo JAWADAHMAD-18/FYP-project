@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Lock, Plane, ArrowLeft } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 import InputField from "../components/inputs/SignupInputs";
 import API from "../api/Api.js";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
+import { googleAuthApi } from "../services/auth.service.js";
 
 
 const Signup = () => {
@@ -17,6 +19,7 @@ const Signup = () => {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,6 +49,28 @@ const Signup = () => {
       alert(error.response?.data?.message || error.message || "Something went wrong.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const idToken = credentialResponse?.credential;
+    if (!idToken) {
+      alert("Google sign-up failed. Please try again.");
+      return;
+    }
+
+    try {
+      setGoogleLoading(true);
+      const res = await googleAuthApi(idToken);
+      const token = res?.data?.accessToken;
+      if (!token) throw new Error("No access token returned from Google auth.");
+
+      const userData = await applyAuth(token);
+      navigate(userData?.isAdmin ? "/admin/dashboard" : "/dashboard");
+    } catch (error) {
+      alert(error.response?.data?.message || error.message || "Google sign-up failed.");
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -166,6 +191,32 @@ const Signup = () => {
               <Plane className={`w-5 h-5 rotate-45 ${loading ? "animate-pulse" : ""}`} />
               {loading ? "Creating your account..." : "Join the Journey"}
             </motion.button>
+
+            <div className="flex items-center gap-3 mt-2">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs font-semibold text-gray-500">OR</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            <div className="w-full rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+              {googleLoading ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full bg-[#0A1A44] text-white font-bold py-3 rounded-xl disabled:opacity-60"
+                >
+                  Continue with Google...
+                </button>
+              ) : (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => alert("Google sign-up failed")}
+                  text="continue_with"
+                  shape="pill"
+                  width="100%"
+                />
+              )}
+            </div>
           </form>
 
           <p className="text-center text-gray-500 mt-6 text-sm">

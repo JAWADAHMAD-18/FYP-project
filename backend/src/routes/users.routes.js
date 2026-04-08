@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { registerUser, loginUser, refreshAccessToken, logoutUser, getCurrentUser, updateUserProfile } from "../controllers/users.controllers.js";
-import { forgotPassword, resetPassword } from "../controllers/auth.controllers.js";
+import { forgotPassword, googleAuth, resetPassword } from "../controllers/auth.controllers.js";
 import { upload } from "../middleware/cloudinary.middleware.js";
 import verifyAuth from "../middleware/auth.middleware.js";
 import { authLimiter, apiLimiter, strictLimiter } from "../utills/rateLimiter.utills.js";
@@ -14,6 +14,7 @@ router.route("/login").post(authLimiter, loginUser);
 router.route("/refresh-token").post(authLimiter, refreshAccessToken);
 router.route("/auth/forgot-password").post(strictLimiter, forgotPassword);
 router.route("/auth/reset-password").post(strictLimiter, resetPassword);
+router.route("/auth/google").post(apiLimiter, googleAuth);
 
 // Protected routes — lighter general limiter is sufficient here.
 router.route("/logout").post(apiLimiter, verifyAuth, logoutUser);

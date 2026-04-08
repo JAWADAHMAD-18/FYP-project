@@ -2,13 +2,16 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Plane, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import InputField from "../components/inputs/SignupInputs.jsx";
 import { useAuth } from "../context/useAuth.js";
+import { googleAuthApi } from "../services/auth.service.js";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, user, loading } = useAuth();
+  const { login, user, applyAuth } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
@@ -61,6 +64,33 @@ const Login = () => {
       setError(err.response?.data?.message || "Invalid email or password");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const idToken = credentialResponse?.credential;
+    if (!idToken) {
+      setError("Google sign-in failed. Please try again.");
+      return;
+    }
+
+    try {
+      setError("");
+      setGoogleSubmitting(true);
+      const res = await googleAuthApi(idToken);
+      const token = res?.data?.accessToken;
+      if (!token) throw new Error("No access token returned");
+
+      const userData = await applyAuth(token);
+      if (userData?.isAdmin) {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Google sign-in failed");
+    } finally {
+      setGoogleSubmitting(false);
     }
   };
 
@@ -165,6 +195,32 @@ const Login = () => {
               <Plane className="w-5 h-5" />
               {submitting ? "Signing in..." : "Sign In"}
             </motion.button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs font-semibold text-gray-500">OR</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            <div className="w-full rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+              {googleSubmitting ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full bg-[#0A1A44] text-white font-bold py-3 rounded-xl disabled:opacity-60"
+                >
+                  Continue with Google...
+                </button>
+              ) : (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError("Google sign-in failed")}
+                  text="continue_with"
+                  shape="pill"
+                  width="100%"
+                />
+              )}
+            </div>
           </form>
 
           <p className="text-center text-gray-500 mt-10 text-sm">

@@ -1,5 +1,6 @@
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./index.css";
 import { AuthProvider } from "./context/AuthProvider.jsx";
 import { SupportChatProvider } from "./features/supportChat/context/SupportChatProvider.jsx";
@@ -144,14 +145,16 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ToastProvider>
-      <AuthProvider>
-        <SupportChatProvider>
-          <Suspense fallback={<div className="min-h-screen" />}>
-            <RouterProvider router={router} />
-          </Suspense>
-        </SupportChatProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <ToastProvider>
+        <AuthProvider>
+          <SupportChatProvider>
+            <Suspense fallback={<div className="min-h-screen" />}>
+              <RouterProvider router={router} />
+            </Suspense>
+          </SupportChatProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </GoogleOAuthProvider>
   </StrictMode>,
 );

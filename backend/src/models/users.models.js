@@ -14,7 +14,7 @@ const UserSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
     },
     isAdmin: {
       type: Boolean,
@@ -23,9 +23,18 @@ const UserSchema = new Schema(
     },
     profilePic: {
       type: String,
-      required: true,
+      required: false,
       default:
         "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
+    },
+    googleId: {
+      type: String,
+      default: null,
+    },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
     phone: {
       type: String,
@@ -47,12 +56,13 @@ const UserSchema = new Schema(
 );
 
 UserSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
+  if (this.isModified("password") && this.password) {
     this.password = await bcrypt.hash(this.password, 10);
   }
   next();
 });
 UserSchema.methods.isPasswordCorrect = async function (password) {
+  if (!this.password) return false;
   return await bcrypt.compare(password, this.password);
 };
 
