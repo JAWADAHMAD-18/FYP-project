@@ -339,3 +339,32 @@ export const paymentCancelledEmailTemplate = ({ user, booking, dashboardUrl }) =
   `,
     `Refund initiated for your cancelled booking — ${booking.packageSnapshot?.title || "your trip"}.`
   );
+
+// Reset password email
+export const resetPasswordTemplate = (resetUrl) =>
+  wrapEmail(
+    `
+    <h1 style="font-size:26px; font-weight:800; color:${BRAND_COLOR}; line-height:1.3;">
+      Reset Your Password 🔐
+    </h1>
+    <p style="font-size:15px; color:#475569; margin-top:12px; line-height:1.7;">
+      We received a request to reset the password for your TripFusion account. Click the button below to set a new password.
+    </p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px; background:#FFF7ED; border-radius:10px; padding:20px 24px; border-left:4px solid #F59E0B;">
+      <tr>
+        <td>
+          <p style="font-size:14px; font-weight:700; color:#92400E; margin-bottom:8px;">⏳ Important:</p>
+          <ul style="font-size:13px; color:#78350F; padding-left:18px; line-height:2;">
+            <li>This link expires in <strong>15 minutes</strong></li>
+            <li>If you didn't request this, you can safely ignore this email</li>
+            <li>Your password will remain unchanged until you create a new one</li>
+          </ul>
+        </td>
+      </tr>
+    </table>
+
+    ${ctaButton(resetUrl, "Reset My Password")}
+  `,
+    "You requested a password reset for your TripFusion account."
+  );

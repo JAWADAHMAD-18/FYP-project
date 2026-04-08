@@ -6,6 +6,7 @@ import {
   paymentApprovedEmailTemplate,
   bookingCancelledEmailTemplate,
   paymentCancelledEmailTemplate,
+  resetPasswordTemplate,
 } from "../utills/emailTemplates.utills.js";
 
 // ─── Core send function ───────────────────────────────────────────────────────
@@ -160,4 +161,16 @@ export const sendPaymentCancelledEmail = ({ user, booking }) => {
       `[EmailService] Payment-cancelled/refund email sent → ${user.email} [${booking.bookingCode}]`
     );
   });
+};
+
+// Send password reset email
+export const sendPasswordResetEmail = async (toEmail, resetUrl) => {
+  const html = resetPasswordTemplate(resetUrl);
+  await sendEmail({
+    toEmail,
+    toName: "TripFusion User",
+    subject: "Reset Your TripFusion Password 🔐",
+    htmlContent: html,
+  });
+  console.log(`[EmailService] Password reset email sent → ${toEmail}`);
 };

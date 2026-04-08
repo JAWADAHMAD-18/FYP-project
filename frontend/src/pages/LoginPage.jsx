@@ -146,6 +146,15 @@ const Login = () => {
               isPassword
             />
 
+            <div className="text-right -mt-2">
+              <a
+                href="/forgot-password"
+                className="text-blue-600 text-sm font-semibold hover:underline"
+              >
+                Forgot Password?
+              </a>
+            </div>
+
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}

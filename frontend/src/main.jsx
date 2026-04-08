@@ -34,6 +34,8 @@ const AdminBookingDetail = lazy(
 );
 const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings.jsx"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage.jsx"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage.jsx"));
 
 const router = createBrowserRouter([
   {
@@ -129,6 +131,14 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
   },
 ]);
 
