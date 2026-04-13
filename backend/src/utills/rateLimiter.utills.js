@@ -72,7 +72,7 @@ export const rateLimitInfoMiddleware = (req, res, next) => {
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100 * DEV_MULTIPLIER,
+  max: 1000 * DEV_MULTIPLIER,
   skip: skipWhitelistedIPs,
   keyGenerator: generateKey,
   handler: rateLimitHandler,
@@ -83,7 +83,7 @@ export const apiLimiter = rateLimit({
 
 export const chatLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 30 * DEV_MULTIPLIER,
+  max: 300 * DEV_MULTIPLIER,
   skip: skipWhitelistedIPs,
   keyGenerator: generateKey,
   handler: rateLimitHandler,
@@ -94,7 +94,7 @@ export const chatLimiter = rateLimit({
 
 export const customPackageLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 10 * DEV_MULTIPLIER,
+  max: 100 * DEV_MULTIPLIER,
   skip: skipWhitelistedIPs,
   keyGenerator: generateKey,
   handler: rateLimitHandler,
@@ -105,7 +105,7 @@ export const customPackageLimiter = rateLimit({
 
 export const externalApiLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
-  max: 50 * DEV_MULTIPLIER,
+  max: 500 * DEV_MULTIPLIER,
   skip: skipWhitelistedIPs,
   keyGenerator: generateKey,
   handler: rateLimitHandler,
@@ -116,7 +116,7 @@ export const externalApiLimiter = rateLimit({
 
 export const dbQueryLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
-  max: 200 * DEV_MULTIPLIER,
+  max: 2000 * DEV_MULTIPLIER,
   skip: skipWhitelistedIPs,
   keyGenerator: generateKey,
   handler: rateLimitHandler,
@@ -127,7 +127,7 @@ export const dbQueryLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5 * DEV_MULTIPLIER,
+  max: 50 * DEV_MULTIPLIER,
   skip: skipWhitelistedIPs,
   keyGenerator: generateKey,
   skipSuccessfulRequests: true,
@@ -139,7 +139,7 @@ export const authLimiter = rateLimit({
 
 export const strictLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3 * DEV_MULTIPLIER,
+  max: 30 * DEV_MULTIPLIER,
   skip: skipWhitelistedIPs,
   keyGenerator: generateKey,
   handler: rateLimitHandler,
