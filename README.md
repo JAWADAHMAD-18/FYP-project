@@ -2,13 +2,13 @@
 
 ## Project Overview
 
-TripFusion is a full-stack, AI-powered travel platform built to simplify and elevate the trip planning experience. Users can explore curated travel packages, generate fully customized itineraries powered by Google Gemini AI, and manage their bookings end-to-end. The platform features role-based access with dedicated dashboards for users and administrators, real-time support chat via WebSockets, Google OAuth authentication, and automated transactional email notifications — delivering a seamless, modern travel planning solution.
+TripFusion is a full-stack, AI-powered travel platform built to simplify and elevate the trip planning experience. Users can explore curated travel packages, generate fully customized itineraries powered by Google Gemini AI,Amadeus api(Real time FLIGHTS and HOTELS data), unSplash(For Imaages), Weather  and manage their bookings end-to-end. The platform features role-based access with dedicated dashboards for users and administrators, real-time support chat via WebSockets, Google OAuth authentication, and automated transactional email notifications — delivering a seamless, modern travel planning solution.
 
 ---
 
 ## Key Features
 
-- 🤖 **AI-Powered Itinerary Generation** — Generate personalized trip plans using Google Gemini AI with real-time flight, hotel, weather, and POI data
+- 🤖 **AI-Powered Itinerary Generation** — Generate personalized trip plans using Google Gemini AI with real-time Amadeus flight, hotel, weather, and POI data
 - 📦 **Curated Travel Packages** — Browse, filter, and book pre-built travel packages with image galleries and detailed breakdowns
 - 📊 **Role-Based Dashboards** — Separate user and admin dashboards with analytics, booking management, and package controls
 - 💬 **Real-Time Support Chat** — Live customer support via Socket.IO with Redis-backed scalability
@@ -34,7 +34,7 @@ TripFusion is a full-stack, AI-powered travel platform built to simplify and ele
 
 ```bash
 # Clone the repository
-git clone https://github.com/JAWADAHMAD-18/tripfusion.git
+git clone https://github.com/JAWADAHMAD-18/FYP-project
 cd fyp
 ```
 
