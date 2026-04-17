@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
 import { googleAuthApi } from "../services/auth.service.js";
 
-
 const Signup = () => {
   const navigate = useNavigate();
   const { applyAuth } = useAuth();
@@ -38,15 +37,22 @@ const Signup = () => {
         email: form.email.trim(),
         password: form.password,
       };
-      const res = await API.post("/user/register", payload, { withCredentials: true });
+      const res = await API.post("/user/register", payload, {
+        withCredentials: true,
+      });
       const token = res.data?.data?.accessToken;
-      if (!token) throw new Error("No access token returned from registration.");
+      if (!token)
+        throw new Error("No access token returned from registration.");
 
       // Authenticate immediately — no need to visit /login
       const userData = await applyAuth(token);
       navigate(userData?.isAdmin ? "/admin/dashboard" : "/dashboard");
     } catch (error) {
-      alert(error.response?.data?.message || error.message || "Something went wrong.");
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Something went wrong.",
+      );
     } finally {
       setLoading(false);
     }
@@ -68,30 +74,25 @@ const Signup = () => {
       const userData = await applyAuth(token);
       navigate(userData?.isAdmin ? "/admin/dashboard" : "/dashboard");
     } catch (error) {
-      alert(error.response?.data?.message || error.message || "Google sign-up failed.");
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Google sign-up failed.",
+      );
     } finally {
       setGoogleLoading(false);
     }
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-[#f0f4f8] p-4 overflow-hidden">
-      {/* Main Container */}
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#f0f4f8] p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-white w-full max-w-5xl h-full max-h-[730px] md:max-h-[650px] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row"
+        className="bg-white w-full max-w-5xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row md:min-h-[650px]"
       >
-        <motion.button
-          whileHover={{ x: -5 }}
-          onClick={() => navigate("/")}
-          className="absolute top-8 left-8 z-50 flex items-center gap-2 text-white md:text-[#0A1A44] font-bold text-sm bg-black/10 md:bg-transparent hover:md:bg-gray-400 px-3 py-2 rounded-xl transition-all"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="hidden sm:inline">Back to Home</span>
-        </motion.button>
-        {/* Left Side: Storytelling Image */}
+        {/* Left Visual — desktop only */}
         <motion.div
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -103,7 +104,17 @@ const Signup = () => {
             backgroundPosition: "center",
           }}
         >
-          <div className="z-10">
+          {/* Back button — desktop */}
+          <motion.button
+            whileHover={{ x: -5 }}
+            onClick={() => navigate("/")}
+            className="absolute top-8 left-8 z-50 flex items-center gap-2 text-white font-bold text-sm bg-black/20 hover:bg-black/30 px-3 py-2 rounded-xl transition-all"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Home</span>
+          </motion.button>
+
+          <div className="z-10 mt-16">
             <h2 className="text-4xl font-black leading-tight tracking-tighter">
               Your Next Story <br /> Starts Here.
             </h2>
@@ -121,13 +132,23 @@ const Signup = () => {
           </div>
         </motion.div>
 
-        {/* Right Side: Compact Form */}
+        {/* Right Form */}
         <motion.div
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.8 }}
           className="w-full md:w-7/12 p-8 lg:p-14 flex flex-col justify-center"
         >
+          {/* Back button — mobile only */}
+          <motion.button
+            whileHover={{ x: -5 }}
+            onClick={() => navigate("/")}
+            className="md:hidden flex items-center gap-2 text-[#0A1A44] font-bold text-sm mb-6 self-start"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back to Home</span>
+          </motion.button>
+
           <div className="mb-6">
             <h1 className="text-3xl font-black text-[#0A1A44] tracking-tight">
               Create Account
@@ -138,7 +159,6 @@ const Signup = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* 2-Column Grid for Inputs to keep it compact */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
               <InputField
                 label="Full Name"
@@ -188,7 +208,9 @@ const Signup = () => {
               disabled={loading}
               className="w-full bg-[#0A1A44] hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-3 mt-4 shadow-lg shadow-blue-900/10"
             >
-              <Plane className={`w-5 h-5 rotate-45 ${loading ? "animate-pulse" : ""}`} />
+              <Plane
+                className={`w-5 h-5 rotate-45 ${loading ? "animate-pulse" : ""}`}
+              />
               {loading ? "Creating your account..." : "Join the Journey"}
             </motion.button>
 
