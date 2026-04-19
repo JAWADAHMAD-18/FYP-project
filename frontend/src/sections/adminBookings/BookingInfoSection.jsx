@@ -2,7 +2,7 @@ import {
   Calendar,
   Users,
   MapPin,
-  BadgeDollarSign,
+  BadgeBanknoteSign,
   FileText,
 } from "lucide-react";
 import BookingStatusBadge from "../../components/admin/BookingStatusBadge";
@@ -72,12 +72,12 @@ export default function BookingInfoSection({ booking }) {
           value={String(booking?.numPeople ?? 1)}
         />
         <InfoRow
-          icon={BadgeDollarSign}
+          icon={BadgeBanknoteSign}
           label="Price per Person"
           value={fmtPrice(booking?.pricePerPerson, booking?.currency)}
         />
         <InfoRow
-          icon={BadgeDollarSign}
+          icon={BadgeBanknoteSign}
           label="Total Price"
           value={fmtPrice(booking?.totalPrice, booking?.currency)}
         />

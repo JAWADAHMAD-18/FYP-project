@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { DollarSign, CreditCard } from "lucide-react";
+import { BanknoteSign, CreditCard } from "lucide-react";
 import StatCard from "../../components/adminDashboard/StatCard";
 import AnimatedCounter from "../../components/adminDashboard/AnimatedCounter";
 
@@ -15,7 +15,7 @@ const RevenueCards = ({ revenue }) => {
   return (
     <>
       <StatCard
-        icon={DollarSign}
+        icon={BanknoteSign}
         label="Total Revenue"
         iconColor="text-emerald-600"
         iconBg="bg-emerald-50"
