@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthProvider.jsx";
 import { SupportChatProvider } from "./features/supportChat/context/SupportChatProvider.jsx";
 import { ToastProvider } from "./context/ToastContext.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 // Route-level code splitting to avoid loading all pages on first paint
 const App = lazy(() => import("./App.jsx"));
@@ -37,6 +38,7 @@ const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings.jsx"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage.jsx"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage.jsx"));
+const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 
 const router = createBrowserRouter([
   {
@@ -141,6 +143,11 @@ const router = createBrowserRouter([
     path: "/reset-password",
     element: <ResetPasswordPage />,
   },
+  // Catch-all — must be last
+  {
+    path: "*",
+    element: <NotFound />,
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(
@@ -150,7 +157,9 @@ createRoot(document.getElementById("root")).render(
         <AuthProvider>
           <SupportChatProvider>
             <Suspense fallback={<div className="min-h-screen" />}>
-              <RouterProvider router={router} />
+              <ErrorBoundary>
+                <RouterProvider router={router} />
+              </ErrorBoundary>
             </Suspense>
           </SupportChatProvider>
         </AuthProvider>
