@@ -6,7 +6,7 @@ import {
   Calendar,
   Users,
   MapPin,
-  BadgeBanknoteSign,
+  Banknote,
   CreditCard,
   UploadCloud,
   ShieldCheck,
@@ -308,7 +308,7 @@ export default function BookingDetail() {
 
                 <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                    <BadgeBanknoteSign size={14} className="text-teal-600" />
+                    <Banknote size={14} className="text-teal-600" />
                     Total Price
                   </div>
                   <div className="mt-2 text-sm font-black text-teal-700">

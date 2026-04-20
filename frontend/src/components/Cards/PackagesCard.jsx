@@ -123,7 +123,7 @@ const PackageCard = ({ packageData, isExpired = false }) => {
             <div>
               <p className="text-xs text-gray-500 mb-1">Price per person</p>
               <p className="text-3xl font-bold" style={{ color: "#0D9488" }}>
-                ${packageData.price}
+                Rs {packageData.price}
               </p>
             </div>
 

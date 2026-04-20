@@ -118,7 +118,7 @@ const UpcomingTrips = () => {
                           Total Investment
                         </p>
                         <p className="text-xl font-black text-teal-600">
-                          ${trip.totalPrice?.toLocaleString() || 0}
+                          Rs {trip.totalPrice?.toLocaleString() || 0}
                         </p>
                       </div>
                     </div>
@@ -147,7 +147,7 @@ const UpcomingTrips = () => {
                     <div className="flex items-center gap-6 text-gray-500 font-medium">
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar size={16} className="text-teal-500" />
-                        {fmtDate(trip.start_date)} - {fmtDate(trip.end_date)}
+                        {fmtDate(trip.packageSnapshot?.start_date)} - {fmtDate(trip.packageSnapshot?.end_date)}
                       </div>
                     </div>
                   </div>
