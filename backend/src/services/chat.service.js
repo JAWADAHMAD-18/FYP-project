@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Conversation from "../models/Conversation.models.js";
+import Conversation from "../models/conversation.models.js";
 import Message from "../models/message.models.js";
 
 class ChatService {
