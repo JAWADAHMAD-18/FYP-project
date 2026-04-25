@@ -22,7 +22,6 @@ const Login = () => {
   // Guard: redirect already-logged-in users away from the login page
   useEffect(() => {
     if (user) {
-      console.log("[Login] Already authenticated. isAdmin:", user.isAdmin);
       navigate(user.isAdmin ? "/admin/dashboard" : "/dashboard", {
         replace: true,
       });
@@ -51,10 +50,7 @@ const Login = () => {
       });
 
       // Use returned userData directly to avoid React state race condition
-      console.log(
-        "[Login] handleSubmit — userData.isAdmin:",
-        userData?.isAdmin,
-      );
+      
       if (userData?.isAdmin) {
         navigate("/admin/dashboard", { replace: true });
       } else {

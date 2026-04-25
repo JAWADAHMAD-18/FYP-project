@@ -250,9 +250,7 @@ export const getUpcomingBookings = asyncHandler(async (req, res) => {
     .select("-__v")
     .lean();
 
-  console.log("User ID:", req.user._id);
-  console.log("Today:", today);
-  console.log("Upcoming bookings found:", bookings.length);
+  
 
   return res
     .status(200)

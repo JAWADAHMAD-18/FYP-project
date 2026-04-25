@@ -460,15 +460,7 @@ export const generateCustomPackage = async ({
     };
 
     timings.totalMs = Date.now() - previewStart;
-    console.log(
-      JSON.stringify({
-        context: "CustomPackage",
-        event: "preview_timings",
-        userId,
-        destination: destinationCity,
-        timings,
-      })
-    );
+    
 
     return responseData;
   } finally {
