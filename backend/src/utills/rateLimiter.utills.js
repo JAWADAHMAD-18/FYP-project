@@ -1,9 +1,9 @@
 import { redisClient } from '../config/redis.config.js';
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import { ApiError } from '../utills/apiError.utills.js';
+import { ApiError } from './apiError.utills.js';
 
-// ==================== CONFIGURATION ====================
+// CONFIGURATION 
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
@@ -15,7 +15,7 @@ const WHITELIST_IPS = (process.env.RATE_LIMIT_WHITELIST || '')
   .map(ip => ip.trim())
   .filter(Boolean);
 
-// ==================== REDIS STORE ====================
+// REDIS STORE 
 
 let redisStore = null;
 if (process.env.REDIS_URL && isProduction) {
@@ -29,7 +29,7 @@ if (process.env.REDIS_URL && isProduction) {
   }
 }
 
-// ==================== UTILITY FUNCTIONS ====================
+//  UTILITY FUNCTIONS 
 
 const skipWhitelistedIPs = (req) => {
   const ip = req.ip || req.connection.remoteAddress;
