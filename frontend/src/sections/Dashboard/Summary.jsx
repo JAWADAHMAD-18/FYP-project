@@ -77,7 +77,7 @@ const TravelInsights = () => {
                       Fusion Savings
                     </p>
                     <p className="text-3xl font-black text-gray-900">
-                      ${fusionSavings.toLocaleString()}
+                      PKR {fusionSavings.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -167,7 +167,7 @@ const TravelInsights = () => {
                   Total Travel Budget
                 </h4>
                 <p className="text-4xl font-bold tracking-tighter">
-                  ${totalSpent.toLocaleString()}
+                  PKR {totalSpent.toLocaleString()}
                 </p>
               </div>
 
