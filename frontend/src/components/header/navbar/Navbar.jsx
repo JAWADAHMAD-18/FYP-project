@@ -120,7 +120,7 @@ export default function Navbar() {
                 data-aos-duration="800"
                 data-aos-easing="linear"
                 onClick={logout}
-                className="hidden md:block text-[#0A1A44] hover:text-blue-600 transition text-lg font-medium"
+                className="hidden md:block text-red-600 hover:text-red-800 transition text-lg font-medium"
               >
                 Logout
               </button>
