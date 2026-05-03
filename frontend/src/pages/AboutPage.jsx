@@ -17,7 +17,7 @@ export default function AboutPage() {
         <StatsSection />
         <StorySection />
         <HowItWorks />
-        <FounderSection />
+        {/* <FounderSection /> */}
         <TechStack />
         <VisionSection />
         <CTASection />

@@ -28,13 +28,13 @@ export default function FounderSection() {
         >
           <div className="flex flex-col sm:flex-row items-center gap-8">
             <div className="flex-shrink-0">
-              {/* <div className="w-32 h-44 rounded-2xl overflow-hidden shadow-lg">
+              <div className="w-32 h-44 rounded-2xl overflow-hidden shadow-lg">
                 <img
                   src={jawadAhmad}
                   alt="Founder Jawad Ahmad"
                   className="w-full h-full object-cover"
                 />
-              </div> */}
+              </div>
             </div>
             <div className="flex-1 text-center sm:text-left">
               <h3 className="text-2xl font-bold text-[#0A1A44]">Jawad Ahmad</h3>
